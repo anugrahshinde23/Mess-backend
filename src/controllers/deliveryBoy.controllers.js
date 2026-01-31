@@ -1,5 +1,6 @@
 import { approveOrderRequest, approveRequest, checkDeliveryBoyPinMatchesUsersPin, getDeliveryBoy, getDeliveryBoyRequests, getMessByPincode, joinMess, registerDeliveryBoy, rejectOrderRequest, rejectRequest } from "../services/deliveryBoy.services.js"
 
+
 export const registerDeliveryBoyByLoggedInUser = async (req,res ) => {
     try {
         const userId = req.user.id
@@ -187,6 +188,11 @@ export const approveOrderRequestByDboy = async (req, res) => {
 }
 
 export const rejectOrderRequestByDboy = async (req,res) => {
+
+
+   console.log(req.body);
+   
+
     try {
         const data = await rejectOrderRequest(req.body)
         return res.status(200).json({
@@ -202,3 +208,4 @@ export const rejectOrderRequestByDboy = async (req,res) => {
         })
     }
 }
+

@@ -1,4 +1,4 @@
-import { oneTimeOrder, getOrder, getOrderHistory, cancelOrder, assignOrderToDeliveryBoy, getOrderRequests } from "../services/order.services.js"
+import { oneTimeOrder, getOrder, getOrderHistory, cancelOrder, assignOrderToDeliveryBoy, getOrderRequests, getDboyByActiveOrder, assignOrderAsSelfPick, completeOrder } from "../services/order.services.js"
 
 export const oneTimeOrderForUser = async(req,res) => {
     
@@ -117,3 +117,66 @@ export const getOrderRequestForDboy = async (req, res) => {
         })
     }
 } 
+
+export const getDboyByActiveOrderForOwner = async (req,res) => {
+
+    
+    try {
+        const {orderId} = req.params
+        const data = await getDboyByActiveOrder(orderId)
+        return res.status(200).json({
+            success : true,
+            message : "delivery boy fetched successfully",
+            dBoyData : data
+        })
+    } catch (error) {
+        console.log(error.message);
+        return res.status(400).json({
+            success : false,
+            message : error.message
+        })
+    }
+}
+
+export const assignOrderAsSelfPickUpByOwner = async (req,res) => {
+    try {
+        const { orderId } = req.params
+        const data = await assignOrderAsSelfPick(orderId)
+
+        return res.status(200).json({
+            success : true,
+            message : "Order assigned as self pick successfully",
+            orderData : data
+        })
+    } catch (error) {
+        console.log(error.message);
+        return res.status(400).json({
+            success : false,
+            message : error.message
+        })
+    }
+}
+
+export const markOrderAsCompleted = async (req,res) => {
+
+    console.log(req.body);
+    
+    
+    
+    try {
+        const { code, orderId } = req.body
+        const data = await completeOrder(code, orderId)
+
+        return res.status(200).json({
+            success : true,
+            message : "Order Completed successfully",
+            orderData : data
+        })
+    } catch (error) {
+        console.log(error.message);
+        return res.status(400).json({
+            success : false,
+            message : error.message
+        })
+    }
+}

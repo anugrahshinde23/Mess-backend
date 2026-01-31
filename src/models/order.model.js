@@ -1,4 +1,4 @@
-import mongoose from 'mongoose'
+import mongoose, { mongo } from 'mongoose'
 
 const orderSchema = new mongoose.Schema({
     mess : {
@@ -32,6 +32,29 @@ const orderSchema = new mongoose.Schema({
     orderDate : {
         type : Date,
         default : Date.now()
+    },
+
+    orderShippingType : {
+        type : String,
+        enum : ["SELF_PICK", "DELIVERY", "NOT_DECIDED"],
+        default : "NOT_DECIDED"
+    },
+
+    orderCompleteCode : {
+        type : String,
+
+    },
+
+    source : {
+        type: String,
+        enum : ["NORMAL", "SUBSCRIPTION"],
+        default : "NORMAL"     
+    },
+
+    subscription : {
+        type : mongoose.Schema.Types.ObjectId,
+        ref : "Subscription",
+        default : null
     },
 
     status : {

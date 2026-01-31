@@ -2,6 +2,7 @@ import DeliveryBoy from "../models/deliveryBoy.model.js"
 import DeliveryBoyRequest from "../models/deliveryBoyRequest.model.js"
 import Mess from "../models/mess.model.js"
 import Notification from "../models/notification.model.js"
+import Order from "../models/order.model.js"
 import OrderRequest from "../models/orderRequest.model.js"
 import User from "../models/user.model.js"
 
@@ -266,13 +267,22 @@ export const approveOrderRequest = async (data) => {
     dBoy.activeOrder = orderId
     await dBoy.save()
 
+    const order = await Order.findById(orderId)
+
+    if(!order){
+        throw new Error("Order not found")
+    }
+
+    order.orderShippingType = "DELIVERY"
+    await order.save()
+
     return orderReq
 
 
 }
 
 export const rejectOrderRequest = async (data) => {
-    const { orderReqId } = data
+    const { orderReqId , dBoyId, orderId} = data
 
     const orderReq = await OrderRequest.findById(orderReqId)
 
@@ -282,6 +292,27 @@ export const rejectOrderRequest = async (data) => {
 
     orderReq.status = "REJECTED"
     await orderReq.save()
+
+    const dBoy = await DeliveryBoy.findById(dBoyId)
+
+    if(!dBoy){
+        throw new Error("Delivery boy not found")
+    }
+
+    dBoy.availabilityStatus = "AVAILABLE"
+    await dBoy.save()
+
+    const order = await Order.findById(orderId)
+
+    if(!order){
+        throw new Error("Order not found")
+
+    }
+
+    order.orderShippingType = "SELF_PICK"
+    await order.save()
+
+    
     
     return orderReq
 }

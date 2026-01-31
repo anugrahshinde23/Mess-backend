@@ -45,6 +45,10 @@ const subsSchema = new mongoose.Schema({
     approvedAt : {
         type : Date,
         default : null
+    },
+    activatedAt : {
+        type : Date,
+        default : null
     }
 }, {
     timestamps : true

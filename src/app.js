@@ -25,6 +25,8 @@ app.get('/api/', (res) =>{
 
 import './cron/expireSubscription.cron.js'
 import './cron/expireOrderRequest.cron.js'
+import './cron/subcriptionAutoOrder.js'
+import './cron/SubscriptionCron.js'
 
 import authRoutes from './routes/auth.routes.js'
 app.use('/api/v1/auth', authRoutes)

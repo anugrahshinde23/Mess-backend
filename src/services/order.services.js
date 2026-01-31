@@ -9,7 +9,7 @@ import DeliveryBoy from "../models/deliveryBoy.model.js";
 export const oneTimeOrder = async (userId, orderData) => {
   const existingOrder = await Order.findOne({
     user: userId,
-    status: { $in: "PLACED" },
+    status: { $in: ["PLACED"] },
   });
 
   if (existingOrder) {
@@ -28,6 +28,8 @@ export const oneTimeOrder = async (userId, orderData) => {
   if (!mess) {
     throw new Error("Mess not found");
   }
+  
+ 
 
   const today = getTodaysDay();
 
@@ -62,13 +64,20 @@ export const oneTimeOrder = async (userId, orderData) => {
 
   if (now > endTime) {
     throw new Error(`${mealType} ordering time is over`);
+
+    
   }
+
+
+  const code = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
 
   const order = await Order.create({
     mess: messId,
     user: userId,
     mealType,
     items: meal.items,
+    orderCompleteCode : code,
+    orderShippingType : mess.deliveryPartners.length === 0 ? "SELF_PICK" : "NOT_DECIDED"
   });
 
   return order;
@@ -104,6 +113,14 @@ export const getOrderHistory = async (userId) => {
 
 export const cancelOrder = async (orderId) => {
   const order = await Order.findById(orderId);
+
+  const orderReq = await OrderRequest.findOne({
+    order : orderId
+  })
+
+  if(orderReq.status === "ACCEPTED"){
+    throw new Error("Order is assigned cannot be cancelled")
+  }
 
   if (!order) {
     throw new Error("Order not exist");
@@ -186,6 +203,66 @@ export const getOrderRequests = async (dBoyId) => {
     .sort({ createAt: -1 });
 
   return orderReq;
+}
+
+export const getDboyByActiveOrder = async (orderId) => {
+
+  const dBoy = await DeliveryBoy.findOne({
+    activeOrder : orderId || null
+  })
+
+  return dBoy
+
+ 
+
+}
+
+
+export const assignOrderAsSelfPick = async (orderId) => {
+
+  const order = await Order.findById(orderId)
+
+  if(!order){
+    throw new Error("Order not found")
+  }
+  
+  order.orderShippingType = "SELF_PICK"
+  await order.save()
+
+
+  return order
+  
+}
+
+export const completeOrder = async (code, orderId) => {
+  const order = await Order.findById(orderId)
+
+  if(order.status === "COMPLETED"){
+    throw new Error("Order already completed")
+  }
+
+  if(!order){
+    throw new Error("Order not found")
+  }
+
+  const orderCode = order.orderCompleteCode
+
+  
+  
+   
+  if(!orderCode){
+    throw new Error("No code provided for this order")
+  }
+
+
+  if(orderCode !== code){
+    throw new Error("Invalid or wrong code")
+  }else if(orderCode === code){
+    order.status = "COMPLETED"
+    await order.save()
+  }
+
+  return order
 }
 
 
