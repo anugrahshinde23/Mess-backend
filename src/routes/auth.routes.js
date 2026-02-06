@@ -6,7 +6,7 @@ const router = express.Router()
 
 router.post('/register', register)
 router.post('/login', login)
-router.post('/logout', verifyJWT, logout)
+router.post('/logout', logout)
 router.post('/generateNewAccessToken', generateNewAccessToken)
 router.get('/me', verifyJWT, getMe)
 
