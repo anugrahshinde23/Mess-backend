@@ -4,7 +4,7 @@ import { connectDb } from './config/mongo.db.js'
 
 
 dotenv.config({
-    path:"./env"
+    path:".env"
 })
 
 connectDb()
