@@ -28,14 +28,14 @@ export const login = async(req,res) => {
         res.cookie('accessToken', accessToken, {
             httpOnly : true,
             secure:true,
-            sameSite:'Strict',
+            sameSite:'none',
             maxAge : 3600000
         })
 
         res.cookie('refreshToken', refreshToken, {
             httpOnly : true,
             secure:true,
-            sameSite:'Strict',
+            sameSite:'none',
             maxAge:7*24*60*60*1000
     
          })
@@ -60,12 +60,12 @@ export const logout = async (req,res) => {
     try {
         const token = req.cookies.refreshToken
         
-        if(!token){
-            return res.status(400).json({
-                success : false,
-                message : "Token not provided"
-            })
-        }
+        // if(!token){
+        //     return res.status(400).json({
+        //         success : false,
+        //         message : "Token not provided"
+        //     })
+        // }
 
         const decoded_token = await jwt.verify(token, process.env.REFRESH_TOKEN_SECRET)
 
@@ -76,8 +76,17 @@ export const logout = async (req,res) => {
             await user.save()
         }
 
-        res.clearCookie('accessToken')
-        res.clearCookie('refreshToken')
+        res.clearCookie('accessToken', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+          });
+          
+          res.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+          });
 
         return res.status(200).json({
             sucess : true,
