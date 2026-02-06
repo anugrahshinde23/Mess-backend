@@ -58,7 +58,7 @@ export const login = async(req,res) => {
 
 export const logout = async (req,res) => {
     try {
-        const token = req.cookies.refreshToken
+        // const token = req.cookies.refreshToken
         
         // if(!token){
         //     return res.status(400).json({
@@ -67,14 +67,14 @@ export const logout = async (req,res) => {
         //     })
         // }
 
-        const decoded_token = await jwt.verify(token, process.env.REFRESH_TOKEN_SECRET)
+        // const decoded_token = await jwt.verify(token, process.env.REFRESH_TOKEN_SECRET)
 
-        const user = await User.findById(decoded_token.id)
+        // const user = await User.findById(decoded_token.id)
 
-        if(user){
-            user.refreshToken = null,
-            await user.save()
-        }
+        // if(user){
+        //     user.refreshToken = null,
+        //     await user.save()
+        // }
 
         res.clearCookie('accessToken', {
             httpOnly: true,
@@ -128,7 +128,7 @@ export const generateNewAccessToken = async (req,res) =>{
         res.cookie('accessToken', newAccessToken, {
             httpOnly : true,
             secure:true,
-            sameSite:'Strict',
+            sameSite:'none',
             maxAge : 3600000
         })
 
