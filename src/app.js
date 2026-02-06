@@ -16,7 +16,7 @@ app.use(express.urlencoded({extended:true}))
 app.use(express.static("public"))
 app.use(cookieParser())
 
-app.get('/api/', (res) =>{
+app.get('/api/', (req,res) =>{
     res.json([{
         message : "Hi from backend",
         name : "Anugrah"
