@@ -1,37 +1,58 @@
-import cron from 'node-cron'
-import OrderRequest from '../models/orderRequest.model.js'
-import DeliveryBoy from '../models/deliveryBoy.model.js'
-import Order from '../models/order.model.js'
+import cron from "node-cron"
+import OrderRequest from "../models/orderRequest.model.js"
+import DeliveryBoy from "../models/deliveryBoy.model.js"
+import Order from "../models/order.model.js"
 
+/* ================= IST HELPER ================= */
 
-cron.schedule("*/5 * * * * *", async () => {
+const getISTDate = () => {
+  return new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+  )
+}
+
+/* ================= CRON ================= */
+
+cron.schedule(
+  "*/5 * * * * *", // every 5 seconds
+  async () => {
     try {
-      const now = new Date()
-  
+      const now = getISTDate()
+
       const expiredRequests = await OrderRequest.find({
         status: "PENDING",
-        expiresAt: { $lte: now }
+        expiresAt: { $lte: now },
       })
-  
+
       for (const req of expiredRequests) {
 
+        // 🛑 extra safety
         if (req.status !== "PENDING") continue
-  
-        // expire request
+
+        /* 1️⃣ EXPIRE REQUEST */
         req.status = "EXPIRED"
         await req.save()
-  
-        // free delivery boy
+
+        /* 2️⃣ FREE DELIVERY BOY */
         await DeliveryBoy.findByIdAndUpdate(req.dBoy, {
           availabilityStatus: "AVAILABLE",
-          
         })
-  
-        // reset order (if still assigning)
-        
+
+        /* 3️⃣ RESET ORDER */
+        await Order.findByIdAndUpdate(req.order, {
+          status: "PLACED", // ready for reassignment
+          assignedTo: null,
+        })
+
+        console.log(
+          `⏳ OrderRequest expired | Order: ${req.order} | DBoy: ${req.dBoy}`
+        )
       }
-  
     } catch (err) {
-      console.error("Cron error:", err.message)
+      console.error("❌ OrderRequest cron error:", err.message)
     }
-  })
+  },
+  {
+    timezone: "Asia/Kolkata", // 🔥 VERY IMPORTANT
+  }
+)

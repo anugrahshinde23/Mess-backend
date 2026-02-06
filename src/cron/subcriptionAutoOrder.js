@@ -4,27 +4,34 @@ import Subscription from "../models/subscription.model.js"
 import Order from "../models/order.model.js"
 import { autoAssignSubscriptionOrder } from "../services/order.services.js"
 
+/* =====================================================
+   IST DATE HELPERS  (🔥 MOST IMPORTANT PART)
+===================================================== */
 
-/* ---------- HELPERS ---------- */
+const getISTDate = () => {
+  return new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+  )
+}
 
 const getStartOfToday = () => {
-  const d = new Date()
+  const d = getISTDate()
   d.setHours(0, 0, 0, 0)
   return d
 }
 
 const getEndOfToday = () => {
-  const d = new Date()
+  const d = getISTDate()
   d.setHours(23, 59, 59, 999)
   return d
 }
 
 const getDay = () => {
-  return new Date().toLocaleString("en-US", { weekday: "long" })
+  return getISTDate().toLocaleString("en-US", { weekday: "long" })
 }
 
 const getCurrentTime = () => {
-  return new Date().toLocaleTimeString("en-GB", {
+  return getISTDate().toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
   })
@@ -35,76 +42,100 @@ const timeToMinutes = (time) => {
   return h * 60 + m
 }
 
-/* ---------- CRON ---------- */
+/* =====================================================
+   CRON JOB (RUNS EVERY MINUTE – IST SAFE)
+===================================================== */
 
-cron.schedule("* * * * *", async () => {
-  try {
-    const todayStart = getStartOfToday()
-    const todayEnd = getEndOfToday()
-    const day = getDay()
-    const now = getCurrentTime()
-    const nowMin = timeToMinutes(now)
+cron.schedule(
+  "* * * * *",
+  async () => {
+    try {
+      const todayStart = getStartOfToday()
+      const todayEnd = getEndOfToday()
+      const day = getDay()
+      const now = getCurrentTime()
+      const nowMin = timeToMinutes(now)
 
-    console.log("⏰ Subscription cron running", day, now)
+      console.log(
+        "⏰ Subscription cron",
+        "| Day:", day,
+        "| Time (IST):", now
+      )
 
-    const menus = await Menu.find({ day })
+      const menus = await Menu.find({ day })
 
-    for (const menu of menus) {
-      for (const mealType of ["breakfast", "lunch", "dinner"]) {
+      for (const menu of menus) {
+        for (const mealType of ["breakfast", "lunch", "dinner"]) {
 
-        const slot = menu[mealType]
-        if (!slot || !slot.startTime || slot.items.length === 0) continue
+          const slot = menu[mealType]
 
-        const startMin = timeToMinutes(slot.startTime)
-        const endMin = timeToMinutes(slot.endTime)
+          if (
+            !slot ||
+            !slot.startTime ||
+            !slot.endTime ||
+            !slot.items ||
+            slot.items.length === 0
+          ) continue
 
-        if (nowMin < startMin || nowMin > endMin) continue
+          const startMin = timeToMinutes(slot.startTime)
+          const endMin = timeToMinutes(slot.endTime)
 
-        const subscriptions = await Subscription.find({
-          mess: menu.mess,
-          status: "ACTIVE",
-          startDate: { $lte: todayStart },
-          endDate: { $gte: todayStart },
-        })
+          // ❌ Not in meal time window
+          if (nowMin < startMin || nowMin > endMin) continue
 
-        for (const sub of subscriptions) {
-
-          const alreadyExists = await Order.findOne({
-            subscription: sub._id,
-            mealType,
-            orderDate: { $gte: todayStart, $lte: todayEnd },
+          const subscriptions = await Subscription.find({
+            mess: menu.mess,
+            status: "ACTIVE",
+            startDate: { $lte: todayStart },
+            endDate: { $gte: todayEnd }, // 🔥 IMPORTANT FIX
           })
 
-          if (alreadyExists) continue
-          
-          const code = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
+          for (const sub of subscriptions) {
 
-          /* ✅ 1️⃣ CREATE ORDER */
-          const order = await Order.create({
-            mess: sub.mess,
-            user: sub.user,
-            mealType,
-            items: slot.items,
-            orderCompleteCode : code,
-            source: "SUBSCRIPTION",
-            subscription: sub._id,
-            status: "PLACED",
-            orderDate: new Date(),
-          })
+            const alreadyExists = await Order.findOne({
+              subscription: sub._id,
+              mealType,
+              orderDate: { $gte: todayStart, $lte: todayEnd },
+            })
 
-          console.log(`✅ ${mealType} order created`, order._id)
+            if (alreadyExists) continue
 
-          /* ✅ 2️⃣ AUTO ASSIGN ORDER */
-          await autoAssignSubscriptionOrder({
-            orderId: order._id,
-            messId: sub.mess,
-          })
+            const code = Math.floor(Math.random() * 10000)
+              .toString()
+              .padStart(4, "0")
 
-          console.log(`🚚 Auto assigned order ${order._id}`)
+            /* ================= CREATE ORDER ================= */
+
+            const order = await Order.create({
+              mess: sub.mess,
+              user: sub.user,
+              mealType,
+              items: slot.items,
+              orderCompleteCode: code,
+              source: "SUBSCRIPTION",
+              subscription: sub._id,
+              status: "PLACED",
+              orderDate: getISTDate(), // 🔥 IST SAFE
+            })
+
+            console.log(`✅ ${mealType.toUpperCase()} order created`, order._id)
+
+            /* ================= AUTO ASSIGN ================= */
+
+            await autoAssignSubscriptionOrder({
+              orderId: order._id,
+              messId: sub.mess,
+            })
+
+            console.log(`🚚 Auto assigned order`, order._id)
+          }
         }
       }
+    } catch (error) {
+      console.error("❌ Subscription cron error:", error.message)
     }
-  } catch (error) {
-    console.error("❌ Subscription cron error:", error.message)
+  },
+  {
+    timezone: "Asia/Kolkata", // 🔥 FINAL FIX
   }
-})
+)
