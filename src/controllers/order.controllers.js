@@ -1,4 +1,4 @@
-import { oneTimeOrder, getOrder, getOrderHistory, cancelOrder, assignOrderToDeliveryBoy, getOrderRequests, getDboyByActiveOrder, assignOrderAsSelfPick, completeOrder } from "../services/order.services.js"
+import { oneTimeOrder, getOrder, getOrderHistory, cancelOrder, assignOrderToDeliveryBoy, getOrderRequests, getDboyByActiveOrder, assignOrderAsSelfPick, completeOrder, completeOrderByDboy, getSubscriptionOrders, completeSubsOrder } from "../services/order.services.js"
 
 export const oneTimeOrderForUser = async(req,res) => {
     
@@ -170,6 +170,62 @@ export const markOrderAsCompleted = async (req,res) => {
         return res.status(200).json({
             success : true,
             message : "Order Completed successfully",
+            orderData : data
+        })
+    } catch (error) {
+        console.log(error.message);
+        return res.status(400).json({
+            success : false,
+            message : error.message
+        })
+    }
+}
+
+export const markOrderAsCompletedByDboy = async (req,res) => {
+    try {
+        const {code, orderId, dBoyId} = req.body
+        const data = await completeOrderByDboy(code, orderId, dBoyId)
+        return res.status(200).json({
+            success : true,
+            message : "Order Completed Successfully",
+            orderData: data
+        })
+    } catch (error) {
+        console.log(error.message);
+        return res.status(400).json({
+            success : false,
+            message : error.message
+        })
+    }
+}
+
+export const getSubscriptionOrdersForDboy = async (req,res) => {
+    try {
+        const { dBoyId } = req.params
+        const data = await getSubscriptionOrders(dBoyId)
+        return res.status(200).json({
+            success : true,
+            message : "Successfully fetched subscription orders",
+            orderData : data
+        })
+    } catch (error) {
+        console.log(error.message);
+        return res.status(400).json({
+            success : false,
+            message : error.message
+        })
+    }
+} 
+
+export const completeSubsOrderByDboy = async (req,res) => {
+    console.log(req.body);
+    
+    try {
+        const { code, dBoyId, orderId } = req.body
+        const data = await completeSubsOrder(code, dBoyId, orderId)
+        return res.status(200).json({
+            success : true,
+            message : "Successfully Marked Order As Completed",
             orderData : data
         })
     } catch (error) {

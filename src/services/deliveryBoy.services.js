@@ -34,7 +34,8 @@ export const registerDeliveryBoy = async (userId, deliveryBoyData) => {
   
     const dBoy = await DeliveryBoy.create({
       user: userId,
-      servicePinCodes
+      servicePinCodes,
+      availabilityStatus : "AVAILABLE"
     })
   
     return { deliveryBoy : dBoy, exist }

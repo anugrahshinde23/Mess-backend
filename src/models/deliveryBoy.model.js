@@ -29,7 +29,12 @@ const deliveryBoySchema = new mongoose.Schema({
         type : mongoose.Schema.Types.ObjectId,
         ref : "Order",
         default : null
-    }
+    },
+
+    subscriptionOrders : [{
+        type : mongoose.Schema.Types.ObjectId,
+        ref : "Order"
+    }]
 }, {
     timestamps : true
 })

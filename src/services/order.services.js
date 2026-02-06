@@ -181,6 +181,50 @@ export const assignOrderToDeliveryBoy = async (data) => {
   return request;
 };
 
+
+export const autoAssignSubscriptionOrder = async ({orderId, messId}) => {
+  if(!orderId || !messId){
+    throw new Error("Required fields")
+  }
+
+  const order = await Order.findById(orderId)
+  if(!order){
+    throw new Error("Order not found")
+  }
+
+  const dBoys = await DeliveryBoy.find({
+    workingMesses : messId,
+    availabilityStatus : "AVAILABLE"
+  }).sort({"subscriptionOrders.length" : 1})
+
+  if(!dBoys.length){
+    throw new Error("No Delivery boy found")
+    return null
+  }
+
+  const selectedDboy = dBoys[0]
+
+  await Order.findByIdAndUpdate(orderId, {
+    orderShippingType : "DELIVERY"
+  })
+
+  await DeliveryBoy.findByIdAndUpdate(selectedDboy._id, {
+    $push: {subscriptionOrders : orderId}
+  })
+
+  await Notification.create({
+    user: selectedDboy.user,
+    title: "New Subscription Order",
+    message: "A subscription order has been assigned to you",
+  });
+
+  console.log(`✅ Order ${orderId} auto assigned to ${selectedDboy._id}`);
+
+  return selectedDboy
+}
+
+
+
 export const getOrderRequests = async (dBoyId) => {
   const orderReq = await OrderRequest.find({
     dBoy: dBoyId,
@@ -264,5 +308,93 @@ export const completeOrder = async (code, orderId) => {
 
   return order
 }
+
+export const completeOrderByDboy = async (code, orderId, dBoyId) => {
+  const order = await Order.findById(orderId)  
+
+  if(!order){
+    throw new Error("Order not found")
+  }
+
+  if(order.status === "COMPLETED"){
+    throw new Error("Order already completed")
+  }
+
+  const orderCode = order.orderCompleteCode
+
+  if(!orderCode){
+    throw new Error("No code provided ")
+  }
+
+  if(orderCode !== code){
+    throw new Error("Inavlid or wrong code") 
+  } else if (orderCode === code){
+    order.status = "COMPLETED"
+    await order.save()
+  }
+
+  const dBoy = await DeliveryBoy.findById(dBoyId)
+
+  if(!dBoy){
+    throw new Error("Delivery boy not found")
+  }
+
+  dBoy.availabilityStatus = "AVAILABLE"
+  dBoy.activeOrder = null
+  await dBoy.save()
+
+  return order
+}
+
+
+export const getSubscriptionOrders = async (dBoyId) => {
+  const dBoy = await DeliveryBoy.findById(dBoyId)
+    .populate({
+      path: "subscriptionOrders",
+      select: "mess user payment mealType items source status orderDate",
+      populate: [
+        { path: "user", select: "name phone address" },
+        { path: "mess", select: "name" },
+        { path: "payment", select: "status" }
+      ]
+    })
+
+  if (!dBoy) {
+    throw new Error("Delivery boy not found")
+  }
+
+  return dBoy.subscriptionOrders
+}
+
+
+export const completeSubsOrder = async ( code, dBoyId, orderId) => {
+  const order = await Order.findById(orderId)
+
+  if(!order){
+    throw new Error("Order not found")
+  }
+
+  const orderCode = order.orderCompleteCode
+
+  if(order.status === "COMPLETED"){
+    throw new Error("Order already completed")
+  }
+
+  if(orderCode !== code){
+    throw new Error("Invalid or wrong code")
+  } else {
+    order.status = "COMPLETED"
+    await order.save()
+  }
+
+  await DeliveryBoy.findByIdAndUpdate(dBoyId, {
+    $pull : {
+      subscriptionOrders : orderId
+    }
+  })
+
+  return order
+}
+
 
 
