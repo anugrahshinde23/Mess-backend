@@ -274,6 +274,10 @@ export const assignOrderAsSelfPick = async (orderId) => {
   if(!order){
     throw new Error("Order not found")
   }
+
+  if(order.orderShippingType === "SELF_PICK"){
+    throw new Error("Order already placed as self pick")
+  }
   
   order.orderShippingType = "SELF_PICK"
   await order.save()
