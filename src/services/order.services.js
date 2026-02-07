@@ -47,26 +47,31 @@ export const oneTimeOrder = async (userId, orderData) => {
     throw new Error(`${mealType} not available today`);
   }
 
-  // ✅ TIME VALIDATION (FINAL)
-  const now = new Date();
-
-  const [startHour, startMinute] = meal.startTime.split(":");
-  const startTime = new Date();
-  startTime.setHours(startHour, startMinute, 0, 0);
-
-  const [endHour, endMinute] = meal.endTime.split(":");
-  const endTime = new Date();
-  endTime.setHours(endHour, endMinute, 0, 0);
-
-  if (now < startTime) {
+  const getCurrentTimeIST = () => {
+    return new Date().toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Kolkata"
+    });
+  };
+  
+  const timeToMinutes = (time) => {
+    const [h, m] = time.split(":").map(Number);
+    return h * 60 + m;
+  };
+  
+  const nowMin = timeToMinutes(getCurrentTimeIST());
+  const startMin = timeToMinutes(meal.startTime);
+  const endMin = timeToMinutes(meal.endTime);
+  
+  if (nowMin < startMin) {
     throw new Error(`${mealType} ordering has not started yet`);
   }
-
-  if (now > endTime) {
+  
+  if (nowMin > endMin) {
     throw new Error(`${mealType} ordering time is over`);
-
-    
   }
+  
 
 
   const code = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
