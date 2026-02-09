@@ -91,7 +91,7 @@ export const sendOTP = async (phone) => {
     await user.save()
 
 
-    return true
+    return otp
 
 
 }

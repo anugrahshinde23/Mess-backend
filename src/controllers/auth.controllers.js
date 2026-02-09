@@ -164,7 +164,7 @@ export const sendOTPtoUser = async (req,res) =>{
     return res.status(200).json({
         success : true,
         message : "Successfully get OTP",
-        isOTP : getOTP
+        otp : getOTP
     })
     } catch (error) {
         console.log(error.message);
