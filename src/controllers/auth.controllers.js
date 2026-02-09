@@ -1,4 +1,4 @@
-import { loginUser, registerUser } from "../services/auth.service.js"
+import { loginUser, registerUser, sendOTP, verifyOTP } from "../services/auth.service.js"
 import jwt from 'jsonwebtoken'
 import User from '../models/user.model.js'
 import { generateAccessToken } from "../utility/generateAccessToken.js"
@@ -154,4 +154,61 @@ export const getMe = async(req,res) => {
         success: true,
         user : req.user
     })
+}
+
+export const sendOTPtoUser = async (req,res) =>{
+    try {
+        const {phone} = req.body
+    const getOTP = await sendOTP(phone)
+
+    return res.status(200).json({
+        success : true,
+        message : "Successfully get OTP",
+        isOTP : getOTP
+    })
+    } catch (error) {
+        console.log(error.message);
+        return res.status(400).json({
+            success : false,
+            message : error.message
+        })
+    }
+}
+
+export const verifyOTPtoUser = async (req,res) => {
+    try {
+        const {phone, otp} = req.body
+        const isCorrect = await verifyOTP(phone, otp)
+
+        return res.status(200).json({
+            success : true,
+            message : "Successfully verified otp",
+            isOTPverified : isCorrect
+        })
+    } catch (error) {
+        console.log(error.message);
+        return res.status(400).json({
+            success : false,
+            message : error.message
+        })
+    }
+}
+
+export const resetPasswordForUser = async (req,res) => {
+    try {
+        const {phone, newPassword} = req.body
+        const isPasswordReset = await resetPassword(phone, newPassword)
+
+        return res.status(200).json({
+            success : true,
+            message : "Successfully reseted password",
+            passReset : isPasswordReset
+        })
+    } catch (error) {
+        console.log(error.message);
+        return res.status(400).json({
+            success : false,
+            message : error.message
+        })
+    }
 }
