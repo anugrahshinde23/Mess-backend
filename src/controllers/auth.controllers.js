@@ -1,4 +1,4 @@
-import { loginUser, registerUser, sendOTP, verifyOTP } from "../services/auth.service.js"
+import { loginUser, registerUser, resetPassword, sendOTP, verifyOTP } from "../services/auth.service.js"
 import jwt from 'jsonwebtoken'
 import User from '../models/user.model.js'
 import { generateAccessToken } from "../utility/generateAccessToken.js"
