@@ -63,6 +63,9 @@ app.use('/api/v1/payment', paymentRoutes)
 import deliveryBoyRoutes from './routes/deliveryBoy.routes.js'
 app.use('/api/v1/deliveryboy', deliveryBoyRoutes)
 
+import walletRoutes from './routes/wallet.routes.js'
+app.use('/api/v1/wallet', walletRoutes)
+
 
 
 export {app}
