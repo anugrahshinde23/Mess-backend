@@ -7,7 +7,7 @@ const groq = new Groq({ apiKey: groq_api_key });
 export const askVerity = async (verityData) => {
 
 
-   const {msg} = verityData
+   const {message} = verityData
 
     try {
         const completion = await groq.chat.completions.create({ // Fixed: completions
