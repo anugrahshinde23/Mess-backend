@@ -4,10 +4,8 @@ export const askVerityQuestion = async (req, res) => {
     try {
         
         
-        // Basic Validation
-        if (!msg) {
-            return res.status(400).json({ success: false, message: "Message is required" });
-        }
+    
+        
 
         const data = await askVerity(req.body);
 
