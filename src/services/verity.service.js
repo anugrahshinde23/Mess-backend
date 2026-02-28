@@ -11,7 +11,7 @@ export const askVerity = async (verityData) => {
 
     try {
         const completion = await groq.chat.completions.create({ // Fixed: completions
-            messages: [{ role: "user", content: msg }],
+            messages: [{ role: "user", content: message }],
             model: "llama-3.1-8b-instant",
         });
 
