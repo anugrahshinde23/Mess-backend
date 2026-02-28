@@ -1,20 +1,18 @@
 import Groq from 'groq-sdk';
 
 const groq_api_key = process.env.GROQ_API;
-// Instance ko bahar rakhein (Re-usable)
 const groq = new Groq({ apiKey: groq_api_key });
 
 export const askVerity = async (verityData) => {
-
-
-   const {msg} = verityData
+    // 1. Get history from the request body
+    const { history } = verityData;
 
     try {
-        const completion = await groq.chat.completions.create({ // Fixed: completions
+        const completion = await groq.chat.completions.create({
             messages: [
                 {
-                  role: "system",
-                  content: `
+                    role: "system",
+                    content: `
               You are Verity AI, created by Anugrah.
               You are a smart conversational assistant.
               
@@ -26,8 +24,12 @@ export const askVerity = async (verityData) => {
               - Ask follow-up questions when useful.
               `
                 },
-                { role: "user", content: msg }
-              ],
+                // 2. SPREAD the history here. 
+                // This inserts all previous messages into the prompt.
+                ...history.filter(
+      m => m.role && typeof m.content === "string" && m.content.trim() !== ""
+                )
+            ],
             model: "llama-3.1-8b-instant",
         });
 
