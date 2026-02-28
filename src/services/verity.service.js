@@ -7,11 +7,11 @@ const groq = new Groq({ apiKey: groq_api_key });
 export const askVerity = async (verityData) => {
 
 
-   const {message} = verityData
+   const {msg} = verityData
 
     try {
         const completion = await groq.chat.completions.create({ // Fixed: completions
-            messages: [{ role: "user", content: message }],
+            messages: [{ role: "user", content: msg }],
             model: "llama-3.1-8b-instant",
         });
 
