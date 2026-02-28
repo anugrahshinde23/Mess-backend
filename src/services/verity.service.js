@@ -11,17 +11,23 @@ export const askVerity = async (verityData) => {
 
     try {
         const completion = await groq.chat.completions.create({ // Fixed: completions
-            messages: [{ role: "user", content: msg }, {
-                role : "system",
-                content : ` You are Verity AI, created by Anugrah a smart conversational assistant.
-  - Respond naturally like ChatGPT.
-  - Keep answers structured but not like a blog.
-  - Avoid long introductions.
-  - Be helpful, friendly, and human-like.
-  - Use short paragraphs.
-  - Ask follow-up questions when useful.
-  `
-            }],
+            messages: [
+                {
+                  role: "system",
+                  content: `
+              You are Verity AI, created by Anugrah.
+              You are a smart conversational assistant.
+              
+              Rules:
+              - Reply like ChatGPT.
+              - Be short, clear, and conversational.
+              - Avoid long blog-style answers.
+              - Use simple structure.
+              - Ask follow-up questions when useful.
+              `
+                },
+                { role: "user", content: msg }
+              ],
             model: "llama-3.1-8b-instant",
         });
 
