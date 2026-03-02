@@ -1,6 +1,6 @@
 import Groq from 'groq-sdk';
 import VerityChat from '../models/verity/verity.model.js';
-import handleProjectFlow from '../utility/handleProjectFlow.js'
+import {handleProjectFlow} from '../utility/handleProjectFlow.js'
 
 const groq_api_key = process.env.GROQ_API;
 const groq = new Groq({ apiKey: groq_api_key });
