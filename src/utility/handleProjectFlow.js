@@ -1,4 +1,4 @@
-const handleProjectFlow = async (chat, message) => {
+export const handleProjectFlow = async (chat, message) => {
     const step = chat.projectSetup.step;
   
     switch (step) {
