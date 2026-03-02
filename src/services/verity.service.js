@@ -91,3 +91,11 @@ export const getChat = async (chatId) => {
 
     return chat
 }
+
+export const getAllChats = async (userId) => {
+    const chats = await VerityChat.find({
+        user : userId
+    })
+
+    return chats
+}

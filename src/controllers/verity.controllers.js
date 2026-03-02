@@ -81,3 +81,23 @@ export const getChatForUser = async(req,res) => {
         })
     }
 }
+
+export const getAllChatsOfUser = async (req,res) => {
+    try {
+        const userId = req.user.id
+        const data = await getAllChats(userId)
+
+        return res.status(200).json( {
+            success : true,
+            message : "Successfully fetched all chats",
+            chats : data
+
+        })
+    } catch (error) {
+        console.log(error);
+        return res.status(400).json({
+            success : false,
+            message : error.message
+        })
+    }
+}
