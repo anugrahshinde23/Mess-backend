@@ -85,6 +85,8 @@ export const getChatForUser = async(req,res) => {
 export const getAllChatsOfUser = async (req,res) => {
     try {
         const userId = req.user.id
+        console.log(userId);
+        
         const data = await getAllChats(userId)
 
         return res.status(200).json( {

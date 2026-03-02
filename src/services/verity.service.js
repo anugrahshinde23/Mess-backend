@@ -93,6 +93,8 @@ export const getChat = async (chatId) => {
 }
 
 export const getAllChats = async (userId) => {
+    console.log(userId);
+    
     const chats = await VerityChat.find({
         user : userId
     })
