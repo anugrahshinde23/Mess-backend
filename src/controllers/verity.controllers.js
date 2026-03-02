@@ -1,4 +1,4 @@
-import { askVerity, createNewChat, getChat, sendMessage } from "../services/verity.service.js";
+import { askVerity, createNewChat, getAllChats, getChat, sendMessage } from "../services/verity.service.js";
 
 export const askVerityQuestion = async (req, res) => {
     try {
