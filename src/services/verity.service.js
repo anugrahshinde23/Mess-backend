@@ -72,6 +72,8 @@ export const createNewChat = async (userId, mode ) => {
         });
       }
 
+      await chat.save()
+
     return chat
 }
 
