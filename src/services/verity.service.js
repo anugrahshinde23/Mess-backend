@@ -105,23 +105,24 @@ export const getAllChats = async (userId) => {
 export const updateChatTitle = async (chatId, title) => {
 
 
-   console.log(chatId)
+    console.log("Updating title for:", chatId);
 
-   if(!title || title.trim() === ""){
-    throw new Error("Title cannot be empty")
-   }
-
-    const chat = await VerityChat.findByIdAndUpdate(chatId, {
-        title : title.trim(),
-        
-
-    }, {
-        new  : true
-    })
-
-    if(!chat ){
-        throw new Error("Chat not found")
+    if (!chatId) {
+      throw new Error("Chat ID missing");
     }
-
-    return chat
-}
+  
+    if (!title || title.trim() === "") {
+      throw new Error("Title cannot be empty");
+    }
+  
+    const chat = await VerityChat.findById(chatId);
+  
+    if (!chat) {
+      throw new Error("Chat not found");
+    }
+  
+    chat.title = title.trim();
+    await chat.save();
+  
+    return chat;
+  };
