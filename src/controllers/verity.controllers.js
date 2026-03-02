@@ -26,7 +26,7 @@ export const askVerityQuestion = async (req, res) => {
 
 export const createNewChatForUser = async (req,res) => {
     try {
-        console.log(req.body);
+        console.log("create new chat", req.body);
         
         const userId = req.user.id
         const {mode} = req.body
