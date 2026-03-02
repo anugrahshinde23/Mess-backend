@@ -106,8 +106,13 @@ export const getAllChatsOfUser = async (req,res) => {
 
 export const updateChatTitleOfUser = async (req,res) => {
     try {
+        console.log(req.body)
+        console.log(req.params)
         const chatId = req.params.id
         const {title} = req.body
+
+        console.log("chatId:", chatId);
+console.log("title:", title);
 
         const data = await updateChatTitle(chatId, title)
 
