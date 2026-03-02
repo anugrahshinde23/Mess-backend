@@ -53,9 +53,10 @@ Your job:
     }
 };
 
-export const createNewChat = async (userId) => {
+export const createNewChat = async (userId, mode = "chat") => {
     const chat = await VerityChat.create({
         user : userId,
+        mode,
         messages : []
     })
 
@@ -63,9 +64,11 @@ export const createNewChat = async (userId) => {
 }
 
 export const sendMessage = async (verityData) => {
-    const {chatId, message, mode} = verityData
+    const {chatId, message} = verityData
 
     const chat = await VerityChat.findById(chatId)
+
+    const mode = chat.mode
 
     if(!chat){
         throw new Error("Chat not found")
