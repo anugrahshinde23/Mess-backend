@@ -108,7 +108,7 @@ export const updateChatTitleOfUser = async (req,res) => {
     try {
         console.log(req.body)
         console.log(req.params)
-        const chatId = req.params.id
+        const chatId = req.params.chatId
         const {title} = req.body
 
         console.log("chatId:", chatId);
