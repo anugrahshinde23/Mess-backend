@@ -53,7 +53,7 @@ Your job:
     }
 };
 
-export const createNewChat = async (userId, mode = "chat") => {
+export const createNewChat = async (userId, mode ) => {
     const chat = await VerityChat.create({
         user : userId,
         mode,
