@@ -105,6 +105,8 @@ export const getAllChats = async (userId) => {
 export const updateChatTitle = async (chatId, title) => {
 
 
+   console.log(chatId)
+
    if(!title || title.trim() === ""){
     throw new Error("Title cannot be empty")
    }
