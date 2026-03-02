@@ -126,3 +126,18 @@ export const updateChatTitle = async (chatId, title) => {
   
     return chat;
   };
+
+
+export const deleteChat = async (chatId) => {
+    const chat = await VerityChat.findOneAndDelete({
+        _id : chatId
+    })
+
+    if(!chat){
+        throw new Error("Chat not found")
+    }
+
+    return chat
+
+
+}

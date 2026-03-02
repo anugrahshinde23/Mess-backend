@@ -1,5 +1,5 @@
 import express from 'express'
-import { askVerityQuestion, createNewChatForUser, getAllChatsOfUser, getChatForUser, sendMessageForUser, updateChatTitleOfUser } from '../controllers/verity.controllers.js'
+import { askVerityQuestion, createNewChatForUser, deleteChatOfUser, getAllChatsOfUser, getChatForUser, sendMessageForUser, updateChatTitleOfUser } from '../controllers/verity.controllers.js'
 import { verifyJWT } from '../middlewares/auth.middleware.js'
 import { allowedRoles } from '../middlewares/allowedRole.middleware.js'
 const router = express.Router()
@@ -10,5 +10,6 @@ router.post('/send-msg', verifyJWT, sendMessageForUser)
 router.get('/get-chat/:chatId', verifyJWT, getChatForUser)
 router.get('/get-all-chats', verifyJWT, getAllChatsOfUser)
 router.put('/update-chat-title/:chatId', verifyJWT, updateChatTitleOfUser)
+router.delete('/delete-chat/:chatId', verifyJWT , deleteChatOfUser)
 
 export default router

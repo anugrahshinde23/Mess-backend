@@ -1,4 +1,4 @@
-import { askVerity, createNewChat, getAllChats, getChat, sendMessage, updateChatTitle } from "../services/verity.service.js";
+import { askVerity, createNewChat, deleteChat, getAllChats, getChat, sendMessage, updateChatTitle } from "../services/verity.service.js";
 
 export const askVerityQuestion = async (req, res) => {
     try {
@@ -119,6 +119,26 @@ console.log("title:", title);
         return res.status(200).json({
             success : true,
             message : "Successfully updated chat title",
+            chatData : data
+        })
+    } catch (error) {
+        console.log(error);
+        return res.status(400).json({
+            success : false,
+            message : error.message
+        })
+    }
+}
+
+
+export const deleteChatOfUser = async (req,res) => {
+    try {
+        const chatId = req.params.chatId
+        const data = await deleteChat(userId)
+
+        return res.status(200).json({
+            success : true,
+            message : "Successfully deleted chat",
             chatData : data
         })
     } catch (error) {
