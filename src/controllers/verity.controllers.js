@@ -134,7 +134,7 @@ console.log("title:", title);
 export const deleteChatOfUser = async (req,res) => {
     try {
         const chatId = req.params.chatId
-        const data = await deleteChat(userId)
+        const data = await deleteChat(chatId)
 
         return res.status(200).json({
             success : true,
