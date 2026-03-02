@@ -69,6 +69,8 @@ app.use('/api/v1/wallet', walletRoutes)
 import verityRoutes from './routes/verity.routes.js'
 app.use('/api/v1/verity', verityRoutes)
 
+import projectRoutes from './routes/projectRoutes.js'
+app.use('/api/v1/project', projectRoutes)
 
 
 export {app}

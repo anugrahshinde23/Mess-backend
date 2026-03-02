@@ -6,15 +6,9 @@ const groq = new Groq({ apiKey: groq_api_key });
 
 export const askVerity = async (verityData) => {
     // 1. Get history from the request body
-    const { history } = verityData;
+    const { history, mode } = verityData;
 
-    try {
-        const completion = await groq.chat.completions.create({
-            messages: [
-                {
-                    role: "system",
-                    content: `
-              You are Verity AI, created by Anugrah.
+    let systemPrompt = `You are Verity AI, created by Anugrah.
               You are a smart conversational assistant.
               
               Rules:
@@ -22,8 +16,27 @@ export const askVerity = async (verityData) => {
               - Be short, clear, and conversational.
               - Avoid long blog-style answers.
               - Use simple structure.
-              - Ask follow-up questions when useful.
-              `
+              - Ask follow-up questions when useful.`
+
+    if(mode === 'project'){
+        systemPrompt = `
+You are a senior software architect and product designer.
+
+Your job:
+- Ask step by step questions to understand the project.
+- Extract frontend, backend, database and features.
+- Guide user.
+- At the end return JSON config of the project.
+- Be short and structured.
+`;
+    }
+
+    try {
+        const completion = await groq.chat.completions.create({
+            messages: [
+                {
+                    role: "system",
+                    content: systemPrompt
                 },
                 // 2. SPREAD the history here. 
                 // This inserts all previous messages into the prompt.
@@ -50,7 +63,7 @@ export const createNewChat = async (userId) => {
 }
 
 export const sendMessage = async (verityData) => {
-    const {chatId, message} = verityData
+    const {chatId, message, mode} = verityData
 
     const chat = await VerityChat.findById(chatId)
 
@@ -68,7 +81,7 @@ export const sendMessage = async (verityData) => {
         content : m.text
     }))
 
-    const response = await askVerity({history})
+    const response = await askVerity({history, mode})
 
     const aiReply = response.choices[0].message.content
 
