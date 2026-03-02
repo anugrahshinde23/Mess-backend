@@ -1,5 +1,6 @@
 import Groq from 'groq-sdk';
 import VerityChat from '../models/verity/verity.model.js';
+import handleProjectFlow from '../utility/handleProjectFlow.js'
 
 const groq_api_key = process.env.GROQ_API;
 const groq = new Groq({ apiKey: groq_api_key });
@@ -54,11 +55,22 @@ Your job:
 };
 
 export const createNewChat = async (userId, mode ) => {
+
+  
+
     const chat = await VerityChat.create({
         user : userId,
         mode,
         messages : []
     })
+
+
+    if (mode === "project") {
+        chat.messages.push({
+          role: "assistant",
+          text: "Let's build your project 🚀. What is your project name?",
+        });
+      }
 
     return chat
 }
@@ -69,6 +81,15 @@ export const sendMessage = async (verityData) => {
     const chat = await VerityChat.findById(chatId)
 
     const mode = chat.mode
+    
+    if (chat.mode === "project") {
+        const reply = await handleProjectFlow(chat, message);
+      
+        chat.messages.push({ role: "assistant", text: reply });
+        await chat.save();
+      
+        return res.json({ reply });
+      }
 
     if(!chat){
         throw new Error("Chat not found")
