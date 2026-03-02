@@ -88,7 +88,7 @@ export const sendMessage = async (verityData) => {
         chat.messages.push({ role: "assistant", text: reply });
         await chat.save();
       
-        return res.json({ reply });
+        return reply
       }
 
     if(!chat){
