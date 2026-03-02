@@ -66,7 +66,7 @@ app.use('/api/v1/deliveryboy', deliveryBoyRoutes)
 import walletRoutes from './routes/wallet.routes.js'
 app.use('/api/v1/wallet', walletRoutes)
 
-import verityRoutes from './routes/veriry.routes.js'
+import verityRoutes from './routes/verity.routes.js'
 app.use('/api/v1/verity', verityRoutes)
 
 

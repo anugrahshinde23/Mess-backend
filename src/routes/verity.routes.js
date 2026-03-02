@@ -1,0 +1,12 @@
+import express from 'express'
+import { askVerityQuestion, createNewChatForUser, getChatForUser, sendMessageForUser } from '../controllers/verity.controllers.js'
+import { verifyJWT } from '../middlewares/auth.middleware.js'
+import { allowedRoles } from '../middlewares/allowedRole.middleware.js'
+const router = express.Router()
+
+router.post('/ask',verifyJWT ,askVerityQuestion)
+router.post('/new-chat', verifyJWT, createNewChatForUser )
+router.post('/send-msg', verifyJWT, sendMessageForUser)
+router.get('/get-chat/:chatId', verifyJWT, getChatForUser)
+
+export default router
