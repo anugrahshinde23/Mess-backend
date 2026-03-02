@@ -71,7 +71,7 @@ export const getChatForUser = async(req,res) => {
         return res.status(200).json({
             success : true,
             message : "Successfully fetched the chats",
-            chatData : chat
+            chatData : data
         })
     } catch (error) {
         console.log(error);

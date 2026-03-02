@@ -73,7 +73,7 @@ export const sendMessage = async (verityData) => {
     const aiReply = response.choices[0].message.content
 
     chat.messages.push({
-        role : "ai",
+        role : "assistant",
         text : aiReply
     })
 
