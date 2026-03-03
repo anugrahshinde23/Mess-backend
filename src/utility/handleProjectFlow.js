@@ -3,37 +3,37 @@ import { askVerity } from "../services/verity.service.js";
 import path from "path";
 import fs from "fs";
 import { createGithubRepo, pushToGithub } from "./github.services.js";
-import {copyTemplate} from './copyTemplate.js'
+import { copyTemplate } from "./copyTemplate.js";
 
 /**
- * Safely extract JSON from AI response
+ * Safe JSON parser (no dirty hacks)
  */
-function extractJSON(rawContent) {
-  let text = rawContent.replace(/```json|```/g, "").trim();
+function safeParseAIResponse(raw) {
+  let text = raw.replace(/```json|```/g, "").trim();
 
   const first = text.indexOf("{");
   const last = text.lastIndexOf("}");
 
   if (first === -1 || last === -1) {
-    throw new Error("Invalid AI JSON format");
+    throw new Error("No valid JSON found");
   }
 
   text = text.substring(first, last + 1);
 
-  // Remove trailing commas
-  text = text.replace(/,(\s*[}\]])/g, "$1");
-
-  return text;
+  return JSON.parse(text);
 }
 
 /**
- * Inject AI-generated files into copied template
+ * Inject base64 decoded files
  */
 function injectFiles(basePath, filesObject = {}) {
   for (const key in filesObject) {
     const fullPath = path.join(basePath, key);
     fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-    fs.writeFileSync(fullPath, filesObject[key], "utf-8");
+
+    const decoded = Buffer.from(filesObject[key], "base64").toString("utf-8");
+
+    fs.writeFileSync(fullPath, decoded, "utf-8");
   }
 }
 
@@ -69,8 +69,8 @@ export const handleProjectFlow = async (chat, message) => {
       try {
         const featuresArray = message
           .split(",")
-          .map(f => f.trim())
-          .filter(f => f.length > 0);
+          .map((f) => f.trim())
+          .filter((f) => f.length > 0);
 
         chat.projectSetup.data.features = featuresArray;
 
@@ -90,19 +90,21 @@ export const handleProjectFlow = async (chat, message) => {
           .toLowerCase()
           .replace(/[^a-z0-9-]/g, "-");
 
+        const timestamp = Date.now();
+
         const projectRoot = path.join(
           process.cwd(),
           "generated-projects",
-          safeName + "-" + Date.now()
+          `${safeName}-${timestamp}`
         );
 
         // ✅ 1️⃣ Copy template
         const templateName = `${frontend}-${backend}-${database}`;
         copyTemplate(templateName, projectRoot);
 
-        // ✅ 2️⃣ Ask AI only for feature files
+        // ✅ 2️⃣ Ask AI for base64 files
         const featurePrompt = `
-Generate only feature implementation files.
+Generate feature implementation files.
 
 Stack:
 Frontend: ${frontend}
@@ -112,21 +114,25 @@ Database: ${database}
 Features:
 ${featuresArray.join(", ")}
 
-Return STRICT JSON only:
+Return STRICT JSON only.
+
+All file contents MUST be base64 encoded.
+
+Format:
 
 {
   "frontendFiles": {
-     "src/App.jsx": "complete code"
+     "src/App.jsx": "base64_string_here"
   },
   "backendFiles": {
-     "routes/features.js": "complete code"
+     "routes/features.js": "base64_string_here"
   }
 }
 
 Rules:
 - No explanations
 - No markdown
-- Each file content must be a single string
+- No raw code
 `;
 
         const aiResponse = await askVerity({
@@ -137,16 +143,19 @@ Rules:
 
         let parsed;
 
-        try {
-          const cleaned = extractJSON(rawContent);
-          parsed = JSON.parse(cleaned);
-        } catch (err) {
-          console.error("AI JSON parse failed:", err);
-          console.log("Raw output:", rawContent);
-          throw new Error("AI returned invalid JSON");
+        // ✅ Retry system (2 attempts)
+        for (let i = 0; i < 2; i++) {
+          try {
+            parsed = safeParseAIResponse(rawContent);
+            break;
+          } catch (err) {
+            if (i === 1) {
+              throw new Error("AI returned invalid JSON twice");
+            }
+          }
         }
 
-        // ✅ 3️⃣ Inject AI files
+        // ✅ 3️⃣ Inject files
         injectFiles(
           path.join(projectRoot, "frontend"),
           parsed.frontendFiles || {}
@@ -158,7 +167,7 @@ Rules:
         );
 
         // ✅ 4️⃣ Push to GitHub
-        const repoName = safeName + "-" + Date.now();
+        const repoName = `${safeName}-${timestamp}`;
         const repoUrl = await createGithubRepo(repoName);
 
         const authenticatedUrl = repoUrl.replace(
