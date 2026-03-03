@@ -118,7 +118,12 @@ try {
           throw new Error("Invalid AI structure");
         }
         
-        createStructure(projectRoot, parsedStructure);
+        const rootKey = Object.keys(parsedStructure)[0];
+
+createStructure(
+  projectRoot,
+  parsedStructure[rootKey]
+);
 
 
          console.log("Project folders created at:", projectRoot);

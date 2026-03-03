@@ -7,7 +7,6 @@ export const createStructure = (basePath, structure) => {
     throw new Error("Invalid structure format");
   }
 
-  // ✅ VERY IMPORTANT — create base folder first
   fs.mkdirSync(basePath, { recursive: true });
 
   const createRecursive = (currentPath, obj) => {
@@ -17,27 +16,41 @@ export const createStructure = (basePath, structure) => {
       const newPath = path.join(currentPath, key);
       const value = obj[key];
 
-      // If value is NOT an object → ignore
-      if (typeof value !== "object") continue;
+      // 🔹 If value is array → create folder
+      if (Array.isArray(value)) {
+        fs.mkdirSync(newPath, { recursive: true });
+      }
 
-      // If empty object
-      if (Object.keys(value).length === 0) {
+      // 🔹 If value is empty string → create file
+      else if (typeof value === "string") {
+        fs.writeFileSync(newPath, value);
+      }
+
+      // 🔹 If value is empty object → file or folder
+      else if (typeof value === "object" && Object.keys(value).length === 0) {
 
         if (key.includes(".")) {
           fs.writeFileSync(newPath, "");
         } else {
           fs.mkdirSync(newPath, { recursive: true });
         }
+      }
 
-      } else {
-        // Create folder
-        fs.mkdirSync(newPath, { recursive: true });
+      // 🔹 If value is object with content → folder OR JSON file
+      else if (typeof value === "object") {
 
-        // Go deeper
-        createRecursive(newPath, value);
+        if (key.includes(".json")) {
+          fs.writeFileSync(newPath, JSON.stringify(value, null, 2));
+        } else {
+          fs.mkdirSync(newPath, { recursive: true });
+          createRecursive(newPath, value);
+        }
       }
     }
   };
 
   createRecursive(basePath, structure);
+
+  console.log("Base path:", basePath);
+console.log("Creating:", newPath);
 };
