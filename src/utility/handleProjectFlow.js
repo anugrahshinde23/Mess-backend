@@ -80,14 +80,21 @@ Rules:
 
         let parsedStructure;
 
-        try {
-          parsedStructure = JSON.parse(
-            aiResponse.choices[0].message.content
-          );
-        } catch (parseError) {
-          console.error("JSON Parse Error:", parseError);
-          parsedStructure = {};
-        }
+        // ✅ Extract and clean the AI response
+let rawContent = aiResponse.choices[0].message.content;
+
+// Remove markdown backticks if they exist
+const cleanedJSON = rawContent.replace(/```json|```/g, "").trim();
+
+try {
+  parsedStructure = JSON.parse(cleanedJSON);
+} catch (parseError) {
+  console.error("JSON Parse Error:", parseError);
+  // Log the raw content to see exactly what failed
+  console.log("Raw AI Output was:", rawContent);
+  parsedStructure = { error: "Failed to parse structure" };
+}
+
 
         // ✅ Save architecture in project
         newProject.fileStructure = parsedStructure;
