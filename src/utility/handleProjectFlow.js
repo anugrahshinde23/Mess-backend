@@ -1,5 +1,7 @@
 import Project from "../models/verity/projects.model.js";
 import { askVerity } from "../services/verity.service.js";
+import { createStructure } from "./createStructure.js";
+import path from "path"
 
 export const handleProjectFlow = async (chat, message) => {
   const step = chat.projectSetup.step;
@@ -99,6 +101,32 @@ try {
         // ✅ Save architecture in project
         newProject.fileStructure = parsedStructure;
         await newProject.save();
+
+        const safeName = newProject.name.replace(/[^a-z0-9-]/gi, "-");
+
+        const projectRoot = path.join(
+          process.cwd(),
+          "generated-projects",
+          safeName
+        );
+
+        if (
+          !parsedStructure ||
+          typeof parsedStructure !== "object" ||
+          Object.keys(parsedStructure).length === 0
+        ) {
+          throw new Error("Invalid AI structure");
+        }
+        
+        const rootKey = Object.keys(parsedStructure)[0];
+
+createStructure(
+  projectRoot,
+  parsedStructure[rootKey]
+);
+
+
+         console.log("Project folders created at:", projectRoot);
 
         // ✅ Link project to chat
         chat.projectId = newProject._id;
