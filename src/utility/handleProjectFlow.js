@@ -1,36 +1,34 @@
 import Project from "../models/verity/projects.model.js";
 import { askVerity } from "../services/verity.service.js";
-import { createStructure } from "./createStructure.js";
 import path from "path";
-
+import fs from "fs";
 import { createGithubRepo, pushToGithub } from "./github.services.js";
 
 /**
  * Sanitize AI JSON output
- * - Removes markdown backticks
- * - Removes text before first `{`
- * - Fixes trailing commas
- * - Converts bare file names into `"file": ""`
- * - Removes control characters
  */
 function sanitizeAIJSON(rawContent) {
-  // Remove markdown backticks and trim
   let text = rawContent.replace(/```json|```/g, "").trim();
 
-  // Remove everything before the first opening brace
   const firstBrace = text.indexOf("{");
   if (firstBrace >= 0) text = text.slice(firstBrace);
 
-  // Remove trailing commas before } or ]
   text = text.replace(/,(\s*[}\]])/g, "$1");
-
-  // Remove control characters (like \r, \n inside strings)
   text = text.replace(/[\u0000-\u001F]+/g, "");
 
-  // Fix unquoted keys: convert bare file names to "file": ""
-  text = text.replace(/"([\w\-.]+)"(?=\s*[,}])/g, '"$1": ""');
-
   return text;
+}
+
+/**
+ * Write files with content
+ */
+function writeFiles(projectRoot, filesObject) {
+  for (const filePath in filesObject) {
+    const fullPath = path.join(projectRoot, filePath);
+
+    fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+    fs.writeFileSync(fullPath, filesObject[filePath], "utf-8");
+  }
 }
 
 export const handleProjectFlow = async (chat, message) => {
@@ -41,29 +39,28 @@ export const handleProjectFlow = async (chat, message) => {
       chat.projectSetup.data.projectName = message.trim();
       chat.projectSetup.step = 1;
       await chat.save();
-      return "Which frontend do you want? (React, Next, Flutter etc)";
+      return "Which frontend do you want? (react / html)";
 
     case 1:
-      chat.projectSetup.data.frontend = message.trim();
+      chat.projectSetup.data.frontend = message.trim().toLowerCase();
       chat.projectSetup.step = 2;
       await chat.save();
-      return "Which backend?";
+      return "Which backend? (express / flask)";
 
     case 2:
-      chat.projectSetup.data.backend = message.trim();
+      chat.projectSetup.data.backend = message.trim().toLowerCase();
       chat.projectSetup.step = 3;
       await chat.save();
-      return "Which database?";
+      return "Which database? (mongo / none)";
 
     case 3:
-      chat.projectSetup.data.database = message.trim();
+      chat.projectSetup.data.database = message.trim().toLowerCase();
       chat.projectSetup.step = 4;
       await chat.save();
-      return "Tell main features of your project (comma separated).";
+      return "Tell main features (comma separated).";
 
     case 4:
       try {
-        // Format features into array
         const featuresArray = message
           .split(",")
           .map(f => f.trim())
@@ -71,7 +68,6 @@ export const handleProjectFlow = async (chat, message) => {
 
         chat.projectSetup.data.features = featuresArray;
 
-        // Create Project in DB
         const newProject = await Project.create({
           user: chat.user,
           name: chat.projectSetup.data.projectName,
@@ -82,9 +78,10 @@ export const handleProjectFlow = async (chat, message) => {
           status: "generated",
         });
 
-        // Generate AI prompt
+        // 🧠 NEW PROMPT — FILES WITH CONTENT
         const architecturePrompt = `
-Create a clean production-ready folder structure in VALID JSON format.
+Generate a minimal runnable full-stack project.
+
 Project Name: ${newProject.name}
 Frontend: ${newProject.frontend}
 Backend: ${newProject.backend}
@@ -92,91 +89,88 @@ Database: ${newProject.database}
 Features: ${featuresArray.join(", ")}
 
 Rules:
-- Return ONLY pure JSON
-- Folders are objects
-- Files are keys with empty string as value
-- No markdown, no explanations, no text outside JSON
+- Return ONLY valid JSON
+- No explanations
+- No markdown
+- Format must be:
+
+{
+  "files": {
+     "filePath": "complete file content"
+  }
+}
+
+- Include package.json if required
+- Backend must run
+- Frontend must render basic UI
 `;
 
-        // Call AI
         const aiResponse = await askVerity({
           history: [{ role: "user", content: architecturePrompt }],
         });
 
         const rawContent = aiResponse.choices[0].message.content;
-        let parsedStructure;
 
+        let parsed;
         try {
-          const cleanedJSON = sanitizeAIJSON(rawContent);
-          parsedStructure = JSON.parse(cleanedJSON);
-        } catch (parseError) {
-          console.error("JSON Parse Error:", parseError);
-          console.log("Raw AI Output:", rawContent);
-          throw new Error("Failed to parse AI JSON. Try regenerating.");
+          const cleaned = sanitizeAIJSON(rawContent);
+          parsed = JSON.parse(cleaned);
+        } catch (err) {
+          console.error("AI JSON parse failed:", err);
+          console.log("Raw output:", rawContent);
+          throw new Error("AI returned invalid JSON");
         }
 
-        if (!parsedStructure || typeof parsedStructure !== "object" || Object.keys(parsedStructure).length === 0) {
-          throw new Error("Invalid AI structure");
+        if (!parsed.files || typeof parsed.files !== "object") {
+          throw new Error("AI did not return files object");
         }
 
-        // Save structure in DB
-        newProject.architecture = parsedStructure;
-        newProject.fileStructure = parsedStructure;
+        // 📁 Create local project folder
+        const safeName = newProject.name.replace(/[^a-z0-9-]/gi, "-");
+        const projectRoot = path.join(
+          process.cwd(),
+          "generated-projects",
+          safeName
+        );
+
+        // ✍ Write all files
+        writeFiles(projectRoot, parsed.files);
+
+        console.log("Files created at:", projectRoot);
+
+        // 🚀 Create GitHub repo
+        const repoName = safeName + "-" + Date.now();
+        const repoUrl = await createGithubRepo(repoName);
+
+        const authenticatedUrl = repoUrl.replace(
+          "https://",
+          `https://${process.env.GITHUB_TOKEN}@`
+        );
+
+        // 📤 Push to GitHub
+        await pushToGithub(projectRoot, authenticatedUrl);
+
+        newProject.github = {
+          repoName,
+          repoUrl,
+          branch: "main",
+        };
+
         await newProject.save();
 
-        // Create project folders/files
-        const safeName = newProject.name.replace(/[^a-z0-9-]/gi, "-");
-        const projectRoot = path.join(process.cwd(), "generated-projects", safeName);
-        const rootKey = Object.keys(parsedStructure)[0];
-
-        createStructure(projectRoot, parsedStructure[rootKey]);
-        console.log("Project folders created at:", projectRoot);
-
-        // Create GitHub repo
-const repoName = safeName + "-" + Date.now();
-console.log("Creating GitHub repo:", repoName);
-
-const repoUrl = await createGithubRepo(repoName);
-
-// Replace URL with authenticated version for push
-const authenticatedUrl = repoUrl.replace(
-  "https://",
-  `https://${process.env.GITHUB_TOKEN}@`
-);
-
-// Push code to GitHub
- await pushToGithub(projectRoot, authenticatedUrl);
-
- newProject.github = {
-  repoName,
-  repoUrl,
-  branch: "main"
-};
-
-await newProject.save();
-
-console.log("Project pushed to GitHub:", repoUrl);
-        
-
-        // Link project to chat
         chat.projectId = newProject._id;
         chat.projectSetup.step = 5;
         await chat.save();
 
         return `Project created successfully 🚀
 
-        ✅ GitHub Repo: ${repoUrl}
-        
-        Your project has been generated and pushed to GitHub.
-        
-        Here is your architecture:
-        
-        ${JSON.stringify(parsedStructure, null, 2)}
-        `;
-      } catch (error) {
+✅ GitHub Repo: ${repoUrl}
 
+Your project has been generated and pushed with working code.
+`;
+      } catch (error) {
         console.error("Project Creation Error:", error);
-        return "Project created but architecture generation failed. Try regenerating.";
+        return "Project creation failed. Please try again.";
       }
 
     default:
