@@ -22,12 +22,21 @@ function sanitizeAIJSON(rawContent) {
 /**
  * Write files with content
  */
-function writeFiles(projectRoot, filesObject) {
-  for (const filePath in filesObject) {
-    const fullPath = path.join(projectRoot, filePath);
+function writeFiles(projectRoot, filesObject, currentPath = "") {
+  for (const key in filesObject) {
+    const value = filesObject[key];
+    const newPath = path.join(currentPath, key);
+    const fullPath = path.join(projectRoot, newPath);
 
-    fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-    fs.writeFileSync(fullPath, filesObject[filePath], "utf-8");
+    if (typeof value === "object" && value !== null) {
+      // It's a folder → go deeper
+      fs.mkdirSync(fullPath, { recursive: true });
+      writeFiles(projectRoot, value, newPath);
+    } else {
+      // It's a file → write content
+      fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+      fs.writeFileSync(fullPath, String(value), "utf-8");
+    }
   }
 }
 
