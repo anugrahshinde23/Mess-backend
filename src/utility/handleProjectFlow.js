@@ -7,14 +7,25 @@ import getPort from "get-port";
 import fs from "fs";
 
 /**
- * Fix AI JSON shorthand errors like:
- * "index.js", "App.js" -> "index.js": "", "App.js": ""
+ * Fix broken AI JSON folder structure output
+ * - Converts file-only keys to empty string values
+ * - Removes extra quotes
+ * - Removes trailing commas
  */
-function fixAIJSON(raw) {
-  let cleaned = raw.replace(/```json|```/g, "").trim();
-  cleaned = cleaned.replace(/,\s*([}\]])/g, "$1"); // remove trailing commas
-  cleaned = cleaned.replace(/"([\w\-.]+)"/g, '"$1": ""'); // add empty string for files
-  return cleaned;
+export function fixAIJSON(rawContent) {
+  let text = rawContent.replace(/```json|```/g, "").trim();
+
+  // Remove all trailing commas before } or ]
+  text = text.replace(/,(\s*[}\]])/g, "$1");
+
+  // Fix extra double quotes
+  text = text.replace(/""+/g, '"');
+
+  // Convert bare file keys into key: ""
+  // This regex finds keys without values like "index.js"
+  text = text.replace(/"([\w\-.]+)"(\s*[\},])/g, '"$1": ""$2');
+
+  return text;
 }
 
 export const handleProjectFlow = async (chat, message) => {
