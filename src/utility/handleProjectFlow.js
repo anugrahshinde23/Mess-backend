@@ -143,8 +143,18 @@ Expected format:
 }
 `;
         const aiResponse = await askVerity({
-          history: [{ role: "user", content: featurePrompt }],
-        });
+  history: [
+    {
+      role: "system",
+      content: "You are a strict JSON code generator. Return only valid JSON. No explanation."
+    },
+    {
+      role: "user",
+      content: featurePrompt
+    }
+  ],
+  mode: "project"
+});
 
         const rawContent = aiResponse.choices[0].message.content;
 

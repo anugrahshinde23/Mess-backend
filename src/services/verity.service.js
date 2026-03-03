@@ -19,18 +19,20 @@ export const askVerity = async (verityData) => {
               - Use simple structure.
               - Ask follow-up questions when useful.`
 
-    if(mode === 'project'){
-        systemPrompt = `
-You are a senior software architect and product designer.
-
-Your job:
-- Ask step by step questions to understand the project.
-- Extract frontend, backend, database and features.
-- Guide user.
-- At the end return JSON config of the project.
-- Be short and structured.
-`;
-    }
+              if(mode === 'project'){
+                systemPrompt = `
+            You are a senior backend code generator.
+            
+            STRICT RULES:
+            - Return ONLY valid JSON.
+            - No explanations.
+            - No markdown.
+            - No conversational text.
+            - No placeholders.
+            - If you fail, return:
+              {"frontendFiles": {}, "backendFiles": {}}
+            `;
+            }
 
     try {
         const completion = await groq.chat.completions.create({
