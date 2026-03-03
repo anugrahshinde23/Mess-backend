@@ -104,6 +104,8 @@ export const handleProjectFlow = async (chat, message) => {
 
         // ✅ 2️⃣ Ask AI for base64 files
         const featurePrompt = `
+You are a backend code generator.
+
 Generate feature implementation files.
 
 Stack:
@@ -114,27 +116,32 @@ Database: ${database}
 Features:
 ${featuresArray.join(", ")}
 
-Return STRICT JSON only.
+You MUST return STRICT valid JSON.
+You MUST NOT return any explanation.
+You MUST NOT return any text outside JSON.
+You MUST NOT return placeholder text.
 
 All file contents MUST be base64 encoded.
 
-Format:
+If you cannot generate proper files,
+return this exact JSON:
+
+{
+  "frontendFiles": {},
+  "backendFiles": {}
+}
+
+Expected format:
 
 {
   "frontendFiles": {
-     "src/App.jsx": "base64_string_here"
+    "src/App.jsx": "BASE64_STRING"
   },
   "backendFiles": {
-     "routes/features.js": "base64_string_here"
+    "routes/features.js": "BASE64_STRING"
   }
 }
-
-Rules:
-- No explanations
-- No markdown
-- No raw code
 `;
-
         const aiResponse = await askVerity({
           history: [{ role: "user", content: featurePrompt }],
         });
