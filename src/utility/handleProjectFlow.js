@@ -3,40 +3,37 @@ import { askVerity } from "../services/verity.service.js";
 import path from "path";
 import fs from "fs";
 import { createGithubRepo, pushToGithub } from "./github.services.js";
+import {copyTemplate} from './copyTemplate.js'
 
 /**
- * Sanitize AI JSON output
+ * Safely extract JSON from AI response
  */
-function sanitizeAIJSON(rawContent) {
+function extractJSON(rawContent) {
   let text = rawContent.replace(/```json|```/g, "").trim();
 
-  const firstBrace = text.indexOf("{");
-  if (firstBrace >= 0) text = text.slice(firstBrace);
+  const first = text.indexOf("{");
+  const last = text.lastIndexOf("}");
 
+  if (first === -1 || last === -1) {
+    throw new Error("Invalid AI JSON format");
+  }
+
+  text = text.substring(first, last + 1);
+
+  // Remove trailing commas
   text = text.replace(/,(\s*[}\]])/g, "$1");
-  text = text.replace(/[\u0000-\u001F]+/g, "");
 
   return text;
 }
 
 /**
- * Write files with content
+ * Inject AI-generated files into copied template
  */
-function writeFiles(projectRoot, filesObject, currentPath = "") {
+function injectFiles(basePath, filesObject = {}) {
   for (const key in filesObject) {
-    const value = filesObject[key];
-    const newPath = path.join(currentPath, key);
-    const fullPath = path.join(projectRoot, newPath);
-
-    if (typeof value === "object" && value !== null) {
-      // It's a folder → go deeper
-      fs.mkdirSync(fullPath, { recursive: true });
-      writeFiles(projectRoot, value, newPath);
-    } else {
-      // It's a file → write content
-      fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-      fs.writeFileSync(fullPath, String(value), "utf-8");
-    }
+    const fullPath = path.join(basePath, key);
+    fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+    fs.writeFileSync(fullPath, filesObject[key], "utf-8");
   }
 }
 
@@ -77,52 +74,71 @@ export const handleProjectFlow = async (chat, message) => {
 
         chat.projectSetup.data.features = featuresArray;
 
+        const { frontend, backend, database } = chat.projectSetup.data;
+
         const newProject = await Project.create({
           user: chat.user,
           name: chat.projectSetup.data.projectName,
-          frontend: chat.projectSetup.data.frontend,
-          backend: chat.projectSetup.data.backend,
-          database: chat.projectSetup.data.database,
+          frontend,
+          backend,
+          database,
           features: featuresArray,
           status: "generated",
         });
 
-        // 🧠 NEW PROMPT — FILES WITH CONTENT
-        const architecturePrompt = `
-Generate a minimal runnable full-stack project.
+        const safeName = newProject.name
+          .toLowerCase()
+          .replace(/[^a-z0-9-]/g, "-");
 
-Project Name: ${newProject.name}
-Frontend: ${newProject.frontend}
-Backend: ${newProject.backend}
-Database: ${newProject.database}
-Features: ${featuresArray.join(", ")}
+        const projectRoot = path.join(
+          process.cwd(),
+          "generated-projects",
+          safeName + "-" + Date.now()
+        );
 
-Rules:
-- Return ONLY valid JSON
-- No explanations
-- No markdown
-- Format must be:
+        // ✅ 1️⃣ Copy template
+        const templateName = `${frontend}-${backend}-${database}`;
+        copyTemplate(templateName, projectRoot);
+
+        // ✅ 2️⃣ Ask AI only for feature files
+        const featurePrompt = `
+Generate only feature implementation files.
+
+Stack:
+Frontend: ${frontend}
+Backend: ${backend}
+Database: ${database}
+
+Features:
+${featuresArray.join(", ")}
+
+Return STRICT JSON only:
 
 {
-  "files": {
-     "filePath": "complete file content"
+  "frontendFiles": {
+     "src/App.jsx": "complete code"
+  },
+  "backendFiles": {
+     "routes/features.js": "complete code"
   }
 }
 
-- Include package.json if required
-- Backend must run
-- Frontend must render basic UI
+Rules:
+- No explanations
+- No markdown
+- Each file content must be a single string
 `;
 
         const aiResponse = await askVerity({
-          history: [{ role: "user", content: architecturePrompt }],
+          history: [{ role: "user", content: featurePrompt }],
         });
 
         const rawContent = aiResponse.choices[0].message.content;
 
         let parsed;
+
         try {
-          const cleaned = sanitizeAIJSON(rawContent);
+          const cleaned = extractJSON(rawContent);
           parsed = JSON.parse(cleaned);
         } catch (err) {
           console.error("AI JSON parse failed:", err);
@@ -130,24 +146,18 @@ Rules:
           throw new Error("AI returned invalid JSON");
         }
 
-        if (!parsed.files || typeof parsed.files !== "object") {
-          throw new Error("AI did not return files object");
-        }
-
-        // 📁 Create local project folder
-        const safeName = newProject.name.replace(/[^a-z0-9-]/gi, "-");
-        const projectRoot = path.join(
-          process.cwd(),
-          "generated-projects",
-          safeName
+        // ✅ 3️⃣ Inject AI files
+        injectFiles(
+          path.join(projectRoot, "frontend"),
+          parsed.frontendFiles || {}
         );
 
-        // ✍ Write all files
-        writeFiles(projectRoot, parsed.files);
+        injectFiles(
+          path.join(projectRoot, "backend"),
+          parsed.backendFiles || {}
+        );
 
-        console.log("Files created at:", projectRoot);
-
-        // 🚀 Create GitHub repo
+        // ✅ 4️⃣ Push to GitHub
         const repoName = safeName + "-" + Date.now();
         const repoUrl = await createGithubRepo(repoName);
 
@@ -156,7 +166,6 @@ Rules:
           `https://${process.env.GITHUB_TOKEN}@`
         );
 
-        // 📤 Push to GitHub
         await pushToGithub(projectRoot, authenticatedUrl);
 
         newProject.github = {
@@ -175,7 +184,7 @@ Rules:
 
 ✅ GitHub Repo: ${repoUrl}
 
-Your project has been generated and pushed with working code.
+Template copied and AI features injected successfully.
 `;
       } catch (error) {
         console.error("Project Creation Error:", error);
