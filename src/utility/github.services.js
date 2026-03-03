@@ -22,10 +22,18 @@ export const createGithubRepo = async (repoName) => {
 
 
 export const pushToGithub = async (projectRoot, repoUrl) => {
-  execSync("git init", { cwd: projectRoot });
-  execSync("git add .", { cwd: projectRoot });
-  execSync('git commit -m "Initial commit"', { cwd: projectRoot });
-  execSync(`git branch -M main`, { cwd: projectRoot });
-  execSync(`git remote add origin ${repoUrl}`, { cwd: projectRoot });
-  execSync(`git push -u origin main`, { cwd: projectRoot });
-};
+    execSync("git init", { cwd: projectRoot });
+  
+    // ✅ SET LOCAL GIT USER (VERY IMPORTANT)
+    execSync('git config user.email "bot@verityapp.com"', { cwd: projectRoot });
+    execSync('git config user.name "Verity Bot"', { cwd: projectRoot });
+  
+    execSync("git add .", { cwd: projectRoot });
+    execSync('git commit -m "Initial commit"', { cwd: projectRoot });
+  
+    execSync("git branch -M main", { cwd: projectRoot });
+  
+    execSync(`git remote add origin ${repoUrl}`, { cwd: projectRoot });
+  
+    execSync("git push -u origin main", { cwd: projectRoot });
+  };
