@@ -42,7 +42,11 @@ const verityChatSchema = new mongoose.Schema({
 
       projectSetup: {
     step: { type: Number, default: 0 },
-    data: { type: Object, default: {} },
+    data: { projectName: String,
+        frontend: String,
+        backend: String,
+        database: String,
+        features: [String] },
   },
 
     messages : [messageSchema]
