@@ -1,7 +1,7 @@
 import dotenv from 'dotenv'
 import { app } from './app.js'
 import { connectDb } from './config/mongo.db.js'
-import fs from "fs"
+
 
 
 dotenv.config({
@@ -9,10 +9,6 @@ dotenv.config({
 })
 
 
-if (!fs.existsSync("generated-projects")) {
-    fs.mkdirSync("generated-projects", { recursive: true });
-  console.log("Created root folder for generated projects ✅");
-}
 
 connectDb()
 

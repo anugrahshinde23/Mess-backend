@@ -1,13 +1,13 @@
 import Groq from 'groq-sdk';
 import VerityChat from '../models/verity/verity.model.js';
-import {handleProjectFlow} from '../utility/handleProjectFlow.js'
+
 
 const groq_api_key = process.env.GROQ_API;
 const groq = new Groq({ apiKey: groq_api_key });
 
 export const askVerity = async (verityData) => {
     // 1. Get history from the request body
-    const { history, mode } = verityData;
+    const { history } = verityData;
 
     let systemPrompt = `You are Verity AI, created by Anugrah.
               You are a smart conversational assistant.
@@ -19,20 +19,7 @@ export const askVerity = async (verityData) => {
               - Use simple structure.
               - Ask follow-up questions when useful.`
 
-              if(mode === 'project'){
-                systemPrompt = `
-            You are a senior backend code generator.
-            
-            STRICT RULES:
-            - Return ONLY valid JSON.
-            - No explanations.
-            - No markdown.
-            - No conversational text.
-            - No placeholders.
-            - If you fail, return:
-              {"frontendFiles": {}, "backendFiles": {}}
-            `;
-            }
+             
 
     try {
         const completion = await groq.chat.completions.create({
@@ -56,23 +43,14 @@ export const askVerity = async (verityData) => {
     }
 };
 
-export const createNewChat = async (userId, mode ) => {
+export const createNewChat = async (userId ) => {
 
   
 
     const chat = await VerityChat.create({
         user : userId,
-        mode,
         messages : []
     })
-
-
-    if (mode === "project") {
-        chat.messages.push({
-          role: "assistant",
-          text: "Let's build your project 🚀. What is your project name?",
-        });
-      }
 
       await chat.save()
 
@@ -80,54 +58,40 @@ export const createNewChat = async (userId, mode ) => {
 }
 
 export const sendMessage = async (verityData) => {
-    const {chatId, message} = verityData
-
-    const chat = await VerityChat.findById(chatId)
-
-    if(!chat){
-        throw new Error("Chat not found")
+    const { chatId, message } = verityData;
+  
+    const chat = await VerityChat.findById(chatId);
+  
+    if (!chat) {
+      throw new Error("Chat not found");
     }
-
-    const mode = chat.mode
-
-
+  
+    // Save user message
     chat.messages.push({
-        role : "user",
-        text : message
-    })
-
-
-    
-    if (chat.mode === "project") {
-        const reply = await handleProjectFlow(chat, message);
-      
-        chat.messages.push({ role: "assistant", text: reply });
-        await chat.save();
-      
-        return reply
-      }
-
-    
-    
-
-    const history = chat.messages.map(m => ({
-        role : m.role,
-        content : m.text
-    }))
-
-    const response = await askVerity({history, mode})
-
-    const aiReply = response.choices[0].message.content
-
+      role: "user",
+      text: message,
+    });
+  
+    const history = chat.messages.map((m) => ({
+      role: m.role,
+      content: m.text,
+    }));
+  
+    const response = await askVerity({
+      history
+    });
+  
+    const aiReply = response.choices[0].message.content;
+  
     chat.messages.push({
-        role : "assistant",
-        text : aiReply
-    })
-
-    await chat.save()
-
-    return aiReply
-}
+      role: "assistant",
+      text: aiReply,
+    });
+  
+    await chat.save();
+  
+    return aiReply;
+  };
 
 export const getChat = async (chatId) => {
     const chat = await VerityChat.findById(chatId)

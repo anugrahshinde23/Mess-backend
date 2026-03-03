@@ -29,8 +29,8 @@ export const createNewChatForUser = async (req,res) => {
         console.log("create new chat", req.body);
         
         const userId = req.user.id
-        const {mode} = req.body
-        const data = await createNewChat(userId, mode)
+       
+        const data = await createNewChat(userId)
 
         return res.status(200).json({
             success : true,

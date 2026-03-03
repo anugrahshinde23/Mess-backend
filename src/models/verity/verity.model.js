@@ -29,26 +29,6 @@ const verityChatSchema = new mongoose.Schema({
         default : "New Chat"
     },
 
-    mode : {
-        type : String,
-        enum : ["chat", "project"],
-        default : "chat"
-    },
-
-    projectId : {
-        type : mongoose.Schema.Types.ObjectId,
-        ref : "Project"
-    },
-
-      projectSetup: {
-    step: { type: Number, default: 0 },
-    data: { projectName: String,
-        frontend: String,
-        backend: String,
-        database: String,
-        features: [String] },
-  },
-
     messages : [messageSchema]
 
 
