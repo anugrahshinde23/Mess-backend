@@ -86,11 +86,15 @@ export const sendMessage = async (verityData) => {
         throw new Error("Chat not found")
     }
 
+    const mode = chat.mode
+
 
     chat.messages.push({
         role : "user",
         text : message
     })
+
+
     
     if (chat.mode === "project") {
         const reply = await handleProjectFlow(chat, message);
@@ -109,7 +113,7 @@ export const sendMessage = async (verityData) => {
         content : m.text
     }))
 
-    const response = await askVerity({history, chat.mode})
+    const response = await askVerity({history, mode})
 
     const aiReply = response.choices[0].message.content
 
