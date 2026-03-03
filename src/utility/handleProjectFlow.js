@@ -1,21 +1,31 @@
 import Project from "../models/verity/projects.model.js";
 import { askVerity } from "../services/verity.service.js";
 import { createStructure } from "./createStructure.js";
-import path from "path"
+import path from "path";
 import { runProject } from "./runProjects.js";
 import getPort from "get-port";
+import fs from "fs";
+
+/**
+ * Fix AI JSON shorthand errors like:
+ * "index.js", "App.js" -> "index.js": "", "App.js": ""
+ */
+function fixAIJSON(raw) {
+  let cleaned = raw.replace(/```json|```/g, "").trim();
+  cleaned = cleaned.replace(/,\s*([}\]])/g, "$1"); // remove trailing commas
+  cleaned = cleaned.replace(/"([\w\-.]+)"/g, '"$1": ""'); // add empty string for files
+  return cleaned;
+}
 
 export const handleProjectFlow = async (chat, message) => {
   const step = chat.projectSetup.step;
 
   switch (step) {
-
     case 0:
       chat.projectSetup.data.projectName = message.trim();
       chat.projectSetup.step = 1;
       await chat.save();
       return "Which frontend do you want? (React, Next, Flutter etc)";
-
 
     case 1:
       chat.projectSetup.data.frontend = message.trim();
@@ -23,13 +33,11 @@ export const handleProjectFlow = async (chat, message) => {
       await chat.save();
       return "Which backend?";
 
-
     case 2:
       chat.projectSetup.data.backend = message.trim();
       chat.projectSetup.step = 3;
       await chat.save();
       return "Which database?";
-
 
     case 3:
       chat.projectSetup.data.database = message.trim();
@@ -37,11 +45,9 @@ export const handleProjectFlow = async (chat, message) => {
       await chat.save();
       return "Tell main features of your project (comma separated).";
 
-
     case 4:
       try {
-
-        // ✅ Format features into array
+        // Format features into array
         const featuresArray = message
           .split(",")
           .map(f => f.trim())
@@ -49,7 +55,7 @@ export const handleProjectFlow = async (chat, message) => {
 
         chat.projectSetup.data.features = featuresArray;
 
-        // ✅ Create Project
+        // Create Project in DB
         const newProject = await Project.create({
           user: chat.user,
           name: chat.projectSetup.data.projectName,
@@ -57,13 +63,12 @@ export const handleProjectFlow = async (chat, message) => {
           backend: chat.projectSetup.data.backend,
           database: chat.projectSetup.data.database,
           features: featuresArray,
-          status: "generated"
+          status: "generated",
         });
 
-        // ✅ Generate Architecture Prompt
+        // Generate AI prompt
         const architecturePrompt = `
 Create a clean production-ready folder structure in VALID JSON format.
-
 Project Name: ${newProject.name}
 Frontend: ${newProject.frontend}
 Backend: ${newProject.backend}
@@ -72,79 +77,62 @@ Features: ${featuresArray.join(", ")}
 
 Rules:
 - Return ONLY pure JSON
-- No explanation
-- No markdown
-- No text outside JSON
+- Folders are objects
+- Files are keys with empty string as value
+- No markdown, no explanations, no text outside JSON
 `;
 
-        // ✅ Call AI
+        // Call AI
         const aiResponse = await askVerity({
-          history: [{ role: "user", content: architecturePrompt }]
+          history: [{ role: "user", content: architecturePrompt }],
         });
 
+        const rawContent = aiResponse.choices[0].message.content;
         let parsedStructure;
 
-        // ✅ Extract and clean the AI response
-let rawContent = aiResponse.choices[0].message.content;
+        try {
+          const cleanedJSON = fixAIJSON(rawContent);
+          parsedStructure = JSON.parse(cleanedJSON);
+        } catch (parseError) {
+          console.error("JSON Parse Error:", parseError);
+          console.log("Raw AI Output:", rawContent);
+          parsedStructure = { error: "Failed to parse structure" };
+        }
 
-// Remove markdown backticks if they exist
-const cleanedJSON = rawContent.replace(/```json|```/g, "").trim();
+        if (!parsedStructure || typeof parsedStructure !== "object") {
+          throw new Error("Invalid AI structure");
+        }
 
-try {
-  parsedStructure = JSON.parse(cleanedJSON);
-} catch (parseError) {
-  console.error("JSON Parse Error:", parseError);
-  // Log the raw content to see exactly what failed
-  console.log("Raw AI Output was:", rawContent);
-  parsedStructure = { error: "Failed to parse structure" };
-}
-
-
-        // ✅ Save architecture in project
+        // Save structure in DB
         newProject.fileStructure = parsedStructure;
         await newProject.save();
 
+        // Create project folders/files
         const safeName = newProject.name.replace(/[^a-z0-9-]/gi, "-");
-
-        const projectRoot = path.join(
-          process.cwd(),
-          "generated-projects",
-          safeName
-        );
-
-        if (
-          !parsedStructure ||
-          typeof parsedStructure !== "object" ||
-          Object.keys(parsedStructure).length === 0
-        ) {
-          throw new Error("Invalid AI structure");
-        }
-        
+        const projectRoot = path.join(process.cwd(), "generated-projects", safeName);
         const rootKey = Object.keys(parsedStructure)[0];
 
-createStructure(
-  projectRoot,
-  parsedStructure[rootKey]
-);
+        createStructure(projectRoot, parsedStructure[rootKey]);
+        console.log("Project folders created at:", projectRoot);
 
+        // Assign dynamic ports
+        const frontendPort = await getPort();
+        const backendPort = await getPort();
 
-         console.log("Project folders created at:", projectRoot);
+        // Run project processes
+        const processes = runProject(projectRoot, newProject.stackType || "node", frontendPort, backendPort);
 
-const frontendPort = await getPort();
-const backendPort = await getPort();
+        // Save execution info in DB
+        newProject.execution = {
+          frontendPort,
+          backendPort,
+          status: "running",
+        };
+        await newProject.save();
 
-const processes = runProject(projectRoot, newProject.stackType || "node", frontendPort, backendPort);
-
-newProject.execution = {
-  frontendPort,
-  backendPort,
-  status: "running"
-};
-await newProject.save();
-        // ✅ Link project to chat
+        // Link project to chat
         chat.projectId = newProject._id;
         chat.projectSetup.step = 5;
-
         await chat.save();
 
         return `Project created successfully 🚀
@@ -157,7 +145,6 @@ ${JSON.stringify(parsedStructure, null, 2)}`;
         console.error("Project Creation Error:", error);
         return "Project created but architecture generation failed. Try regenerating.";
       }
-
 
     default:
       return "Project setup completed.";
