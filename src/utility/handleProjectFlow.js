@@ -2,8 +2,8 @@ import Project from "../models/verity/projects.model.js";
 import { askVerity } from "../services/verity.service.js";
 import { createStructure } from "./createStructure.js";
 import path from "path";
-import { runProject } from "./runProjects.js";
-import getPort from "get-port";
+
+import { createGithubRepo, pushToGithub } from "./github.services.js";
 
 /**
  * Sanitize AI JSON output
@@ -120,6 +120,7 @@ Rules:
         }
 
         // Save structure in DB
+        newProject.architecture = parsedStructure;
         newProject.fileStructure = parsedStructure;
         await newProject.save();
 
@@ -131,20 +132,31 @@ Rules:
         createStructure(projectRoot, parsedStructure[rootKey]);
         console.log("Project folders created at:", projectRoot);
 
-        // Assign dynamic ports
-        const frontendPort = await getPort();
-        const backendPort = await getPort();
+        // Create GitHub repo
+const repoName = safeName + "-" + Date.now();
+console.log("Creating GitHub repo:", repoName);
 
-        // Run project processes
-        runProject(projectRoot, newProject.stackType || "node", frontendPort, backendPort);
+const repoUrl = await createGithubRepo(repoName);
 
-        // Save execution info in DB
-        newProject.execution = {
-          frontendPort,
-          backendPort,
-          status: "running",
-        };
-        await newProject.save();
+// Replace URL with authenticated version for push
+const authenticatedUrl = repoUrl.replace(
+  "https://",
+  `https://${process.env.GITHUB_TOKEN}@`
+);
+
+// Push code to GitHub
+ await pushToGithub(projectRoot, authenticatedUrl);
+
+ newProject.github = {
+  repoName,
+  repoUrl,
+  branch: "main"
+};
+
+await newProject.save();
+
+console.log("Project pushed to GitHub:", repoUrl);
+        
 
         // Link project to chat
         chat.projectId = newProject._id;
@@ -153,10 +165,16 @@ Rules:
 
         return `Project created successfully 🚀
 
-Here is your architecture:
-
-${JSON.stringify(parsedStructure, null, 2)}`;
+        ✅ GitHub Repo: ${repoUrl}
+        
+        Your project has been generated and pushed to GitHub.
+        
+        Here is your architecture:
+        
+        ${JSON.stringify(parsedStructure, null, 2)}
+        `;
       } catch (error) {
+
         console.error("Project Creation Error:", error);
         return "Project created but architecture generation failed. Try regenerating.";
       }
