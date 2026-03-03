@@ -47,6 +47,16 @@ const projectSchema = new mongoose.Schema({
     default: "draft"
   },
 
+  execution: {
+    frontendPort: Number,
+    backendPort: Number,
+    status: {
+      type: String,
+      enum: ["running", "stopped"],
+      default: "stopped"
+    }
+  },
+
   outputPreference: {
     type: String,
     enum: ["vscode", "download"],

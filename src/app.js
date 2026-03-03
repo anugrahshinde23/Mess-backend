@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
+import Project from './models/verity/projects.model.js'
 
 
 const app = express()
@@ -71,6 +72,22 @@ app.use('/api/v1/verity', verityRoutes)
 
 import projectRoutes from './routes/projectRoutes.js'
 app.use('/api/v1/project', projectRoutes)
+
+import { createProxyMiddleware } from "http-proxy-middleware";
+
+app.use("/preview/:projectId", async (req, res, next) => {
+    const project = await Project.findById(req.params.projectId);
+    if (!project || !project.execution || project.execution.status !== "running") {
+      return res.send("Project not running");
+    }
+  
+    const proxy = createProxyMiddleware({
+      target: `http://localhost:${project.execution.frontendPort}`,
+      changeOrigin: true
+    });
+  
+    proxy(req, res, next);
+  });
 
 
 export {app}

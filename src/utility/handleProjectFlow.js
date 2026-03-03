@@ -2,6 +2,8 @@ import Project from "../models/verity/projects.model.js";
 import { askVerity } from "../services/verity.service.js";
 import { createStructure } from "./createStructure.js";
 import path from "path"
+import { runProject } from "./runProjects.js";
+import getPort from "get-port";
 
 export const handleProjectFlow = async (chat, message) => {
   const step = chat.projectSetup.step;
@@ -128,6 +130,17 @@ createStructure(
 
          console.log("Project folders created at:", projectRoot);
 
+const frontendPort = await getPort();
+const backendPort = await getPort();
+
+const processes = runProject(projectRoot, newProject.stackType || "node", frontendPort, backendPort);
+
+newProject.execution = {
+  frontendPort,
+  backendPort,
+  status: "running"
+};
+await newProject.save();
         // ✅ Link project to chat
         chat.projectId = newProject._id;
         chat.projectSetup.step = 5;
