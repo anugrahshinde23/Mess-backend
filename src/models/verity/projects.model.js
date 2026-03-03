@@ -1,62 +1,60 @@
 import mongoose from "mongoose";
 
 const projectSchema = new mongoose.Schema({
-    user : {
-        type : mongoose.Schema.Types.ObjectId,
-        ref : 'User'
-    },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
 
-    projectName : {
-        type : String,
-        required : true
-    },
+  name: {
+    type: String,
+    required: true
+  },
 
-    frontend : {
-        enabled : {
-            type : Boolean,
-            default : false
-        },
+  frontend: {
+    type: String,
+    default: null
+  },
 
-        framework : {
-            type : String,
-            default : ''
-        }
-    },
+  backend: {
+    type: String,
+    default: null
+  },
 
-    backend : {
-        enabled : {
-            type : Boolean,
-            default : false
-        },
+  database: {
+    type: String,
+    default: null
+  },
 
-        framework : {
-            type : String,
-            default : ''
-        }
-    },
+  features: {
+    type: [String],   // 👈 ARRAY better than string
+    default: []
+  },
 
-    database : {
-        enabled : {
-            type : Boolean,
-            default : false
-        },
+  architecture : {
+    type : String
+  },
 
-        dbType : {
-            type : String,
-            default : ''
-        }
-    },
+  fileStructure : {
+    type : Object,
+    default : {}
+  },
 
-    outputPreference : {
-        type : String,
-        enum : ['VScode', 'Download'],
-        default : 'Download'
-    }
+  status: {
+    type: String,
+    enum: ["draft", "generated", "completed"],
+    default: "draft"
+  },
 
+  outputPreference: {
+    type: String,
+    enum: ["vscode", "download"],
+    default: "download"
+  }
 
 }, {
-    timestamps : true
-})
+  timestamps: true
+});
 
-
-export default mongoose.model('Project', projectSchema)
+export default mongoose.model("Project", projectSchema);
