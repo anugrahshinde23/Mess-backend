@@ -109,7 +109,7 @@ export const sendMessage = async (verityData) => {
         content : m.text
     }))
 
-    const response = await askVerity({history, mode})
+    const response = await askVerity({history, chat.mode})
 
     const aiReply = response.choices[0].message.content
 
