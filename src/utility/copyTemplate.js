@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-function copyTemplate(templateName, projectRoot) {
+export const copyTemplate = (templateName, projectRoot) => {
   const templatePath = path.join(process.cwd(), "templates", templateName);
 
   if (!fs.existsSync(templatePath)) {
