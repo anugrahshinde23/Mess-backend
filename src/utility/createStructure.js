@@ -7,6 +7,9 @@ export const createStructure = (basePath, structure) => {
     throw new Error("Invalid structure format");
   }
 
+  // ✅ VERY IMPORTANT — create base folder first
+  fs.mkdirSync(basePath, { recursive: true });
+
   const createRecursive = (currentPath, obj) => {
 
     for (const key of Object.keys(obj)) {
@@ -14,21 +17,23 @@ export const createStructure = (basePath, structure) => {
       const newPath = path.join(currentPath, key);
       const value = obj[key];
 
-      // If empty object
-      if (typeof value === "object" && Object.keys(value).length === 0) {
+      // If value is NOT an object → ignore
+      if (typeof value !== "object") continue;
 
-        // If it has file extension → create file
+      // If empty object
+      if (Object.keys(value).length === 0) {
+
         if (key.includes(".")) {
           fs.writeFileSync(newPath, "");
         } else {
           fs.mkdirSync(newPath, { recursive: true });
         }
 
-      }
-
-      // If nested object → folder
-      else if (typeof value === "object") {
+      } else {
+        // Create folder
         fs.mkdirSync(newPath, { recursive: true });
+
+        // Go deeper
         createRecursive(newPath, value);
       }
     }
