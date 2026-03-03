@@ -4,26 +4,31 @@ import { createStructure } from "./createStructure.js";
 import path from "path";
 import { runProject } from "./runProjects.js";
 import getPort from "get-port";
-import fs from "fs";
 
 /**
- * Fix broken AI JSON folder structure output
- * - Converts file-only keys to empty string values
- * - Removes extra quotes
- * - Removes trailing commas
+ * Sanitize AI JSON output
+ * - Removes markdown backticks
+ * - Removes text before first `{`
+ * - Fixes trailing commas
+ * - Converts bare file names into `"file": ""`
+ * - Removes control characters
  */
-export function fixAIJSON(rawContent) {
+function sanitizeAIJSON(rawContent) {
+  // Remove markdown backticks and trim
   let text = rawContent.replace(/```json|```/g, "").trim();
 
-  // Remove all trailing commas before } or ]
+  // Remove everything before the first opening brace
+  const firstBrace = text.indexOf("{");
+  if (firstBrace >= 0) text = text.slice(firstBrace);
+
+  // Remove trailing commas before } or ]
   text = text.replace(/,(\s*[}\]])/g, "$1");
 
-  // Fix extra double quotes
-  text = text.replace(/""+/g, '"');
+  // Remove control characters (like \r, \n inside strings)
+  text = text.replace(/[\u0000-\u001F]+/g, "");
 
-  // Convert bare file keys into key: ""
-  // This regex finds keys without values like "index.js"
-  text = text.replace(/"([\w\-.]+)"(\s*[\},])/g, '"$1": ""$2');
+  // Fix unquoted keys: convert bare file names to "file": ""
+  text = text.replace(/"([\w\-.]+)"(?=\s*[,}])/g, '"$1": ""');
 
   return text;
 }
@@ -102,15 +107,15 @@ Rules:
         let parsedStructure;
 
         try {
-          const cleanedJSON = fixAIJSON(rawContent);
+          const cleanedJSON = sanitizeAIJSON(rawContent);
           parsedStructure = JSON.parse(cleanedJSON);
         } catch (parseError) {
           console.error("JSON Parse Error:", parseError);
           console.log("Raw AI Output:", rawContent);
-          parsedStructure = { error: "Failed to parse structure" };
+          throw new Error("Failed to parse AI JSON. Try regenerating.");
         }
 
-        if (!parsedStructure || typeof parsedStructure !== "object") {
+        if (!parsedStructure || typeof parsedStructure !== "object" || Object.keys(parsedStructure).length === 0) {
           throw new Error("Invalid AI structure");
         }
 
@@ -131,7 +136,7 @@ Rules:
         const backendPort = await getPort();
 
         // Run project processes
-        const processes = runProject(projectRoot, newProject.stackType || "node", frontendPort, backendPort);
+        runProject(projectRoot, newProject.stackType || "node", frontendPort, backendPort);
 
         // Save execution info in DB
         newProject.execution = {
@@ -151,7 +156,6 @@ Rules:
 Here is your architecture:
 
 ${JSON.stringify(parsedStructure, null, 2)}`;
-
       } catch (error) {
         console.error("Project Creation Error:", error);
         return "Project created but architecture generation failed. Try regenerating.";
