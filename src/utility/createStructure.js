@@ -8,6 +8,7 @@ export const createStructure = (basePath, structure) => {
   }
 
   fs.mkdirSync(basePath, { recursive: true });
+  console.log("Base path:", basePath);
 
   const createRecursive = (currentPath, obj) => {
 
@@ -15,6 +16,7 @@ export const createStructure = (basePath, structure) => {
 
       const newPath = path.join(currentPath, key);
       const value = obj[key];
+      console.log("Creating:", newPath);
 
       // 🔹 If value is array → create folder
       if (Array.isArray(value)) {
@@ -51,6 +53,6 @@ export const createStructure = (basePath, structure) => {
 
   createRecursive(basePath, structure);
 
-  console.log("Base path:", basePath);
-console.log("Creating:", newPath);
+  
+
 };
