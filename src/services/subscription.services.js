@@ -4,6 +4,7 @@ import Subscription from "../models/subscription.model.js";
 import Notification from "../models/notification.model.js";
 import { expireSubscriptionsIfNeeded } from "../utility/expireSubscription.js";
 
+
 export const createSubscription = async (userId, subscriptionData) => {
   const existingSubscription = await Subscription.findOne({
     user: userId,
@@ -28,9 +29,11 @@ export const createSubscription = async (userId, subscriptionData) => {
 
   const messPlan = mess.plan.find((p) => p.plan.toString() === planId);
 
+
   if (!messPlan) {
     throw new Error("Plan is not offered by this mess");
   }
+
 
   let startDate = null;
   let endDate = null;
@@ -221,3 +224,5 @@ export const getSubscriptionByStatus = async (ownerId, status) => {
 
   return subs;
 };
+
+

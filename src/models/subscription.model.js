@@ -37,6 +37,11 @@ const subsSchema = new mongoose.Schema({
         default : "PENDING"
     },
 
+    isPaid : {
+        type : Boolean,
+        default : false
+    },
+
     approvedBy : {
         type : mongoose.Schema.Types.ObjectId,
         required : false
