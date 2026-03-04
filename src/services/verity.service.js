@@ -6,6 +6,7 @@ import Subscription from "../models/subscription.model.js";
 import Menu from "../models/menu.model.js";
 import Plan from "../models/plan.model.js";
 import User from "../models/user.model.js";
+import Payment from "../models/payment.model.js";
 
 const fetchContextData = async (intent, userId) => {
   let context = "";
@@ -40,6 +41,12 @@ const fetchContextData = async (intent, userId) => {
     const plans = await Plan.find();
 
     context += `Plans:\n${JSON.stringify(plans, null, 2)}\n`;
+  }
+
+  if (intent === "PAYMENT") {
+    const payment = await Payment.find();
+
+    context += `Payment:\n${JSON.stringify(payment, null, 2)}\n`;
   }
 
   return context;
@@ -226,4 +233,5 @@ export const deleteChat = async (chatId) => {
     throw new Error("Chat not found");
   }
 
-  re
+  return chat;
+};
