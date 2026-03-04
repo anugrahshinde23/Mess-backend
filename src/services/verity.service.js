@@ -67,7 +67,7 @@ export const askVerity = async (verityData) => {
   let systemPrompt = `You are Verity AI, created by Anugrah.
               You are a smart conversational assistant.
 
-              You are the intelligent assistant of our messmate platform which is a multimess website.
+              You are the intelligent assistant of our messmate platform which is a multimess website created by Anugrah.
               
               Rules:
               - Reply like ChatGPT.
@@ -226,5 +226,4 @@ export const deleteChat = async (chatId) => {
     throw new Error("Chat not found");
   }
 
-  return chat;
-};
+  re
