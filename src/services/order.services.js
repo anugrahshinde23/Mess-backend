@@ -123,6 +123,9 @@ export const cancelOrder = async (orderId) => {
     order : orderId
   })
 
+
+  console.log("this is order request",orderReq);
+
   if(orderReq.status === "ACCEPTED"){
     throw new Error("Order is assigned cannot be cancelled")
   }
