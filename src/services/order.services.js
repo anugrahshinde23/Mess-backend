@@ -123,6 +123,11 @@ export const cancelOrder = async (orderId) => {
     order : orderId
   })
 
+  if(!orderReq){
+    throw new Error("Order has not yet assigned")
+    return
+  }
+
 
   console.log("this is order request",orderReq);
 
