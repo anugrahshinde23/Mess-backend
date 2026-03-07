@@ -1,4 +1,4 @@
-import { approveOrderRequest, approveRequest, checkDeliveryBoyPinMatchesUsersPin, getDeliveryBoy, getDeliveryBoyRequests, getMessByPincode, joinMess, registerDeliveryBoy, rejectOrderRequest, rejectRequest } from "../services/deliveryBoy.services.js"
+import { approveOrderRequest, approveRequest, checkDeliveryBoyPinMatchesUsersPin, getDeliveryBoy, getDeliveryBoyRequests, getDeliveryBoysOfMess, getMessByPincode, joinMess, registerDeliveryBoy, rejectOrderRequest, rejectRequest } from "../services/deliveryBoy.services.js"
 
 
 export const registerDeliveryBoyByLoggedInUser = async (req,res ) => {
@@ -209,3 +209,22 @@ export const rejectOrderRequestByDboy = async (req,res) => {
     }
 }
 
+
+export const getDeliveryBoysOfMessForOwner = async (req,res) => {
+    try {
+        const ownerId = req.user.id
+        const data = await getDeliveryBoysOfMess(ownerId)
+
+        return res.status(200).json({
+            success : true,
+            message : "Delivery boys fetched successfully",
+            dboyData : data
+        })
+    } catch (error) {
+        console.log(error);
+        return res.status(400).json({
+            success : false,
+            message : error.message
+        })
+    }
+}

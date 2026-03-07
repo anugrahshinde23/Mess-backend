@@ -1,7 +1,7 @@
 import express from 'express'
 import { verifyJWT } from '../middlewares/auth.middleware.js'
 import { allowedRoles } from '../middlewares/allowedRole.middleware.js'
-import { approveOrderRequestByDboy, approveRequestByOwner, checkDeliveryBoyPinMatchesUsersPinForOrder, getDeliveryBoyInfo, getDeliveryBoyRequestOfMess, getMessByPincodeForDeliveryBoy, joinMessForDelivery, registerDeliveryBoyByLoggedInUser, rejectOrderRequestByDboy, rejectRequestByOwner } from '../controllers/deliveryBoy.controllers.js'
+import { approveOrderRequestByDboy, approveRequestByOwner, checkDeliveryBoyPinMatchesUsersPinForOrder, getDeliveryBoyInfo, getDeliveryBoyRequestOfMess, getDeliveryBoysOfMessForOwner, getMessByPincodeForDeliveryBoy, joinMessForDelivery, registerDeliveryBoyByLoggedInUser, rejectOrderRequestByDboy, rejectRequestByOwner } from '../controllers/deliveryBoy.controllers.js'
 
 const router = express.Router()
 
@@ -15,5 +15,6 @@ router.put('/reject/:reqId/request', verifyJWT, allowedRoles('MESS_OWNER'), reje
 router.get('/get-matching-dboy',verifyJWT, allowedRoles('MESS_OWNER'), checkDeliveryBoyPinMatchesUsersPinForOrder )
 router.put('/approve-order-request', verifyJWT, allowedRoles('DELIVERY_BOY'), approveOrderRequestByDboy)
 router.put('/reject-order-request', verifyJWT, allowedRoles('DELIVERY_BOY'), rejectOrderRequestByDboy)
+router.get('/get-dboy-of-mess', verifyJWT, allowedRoles('MESS_OWNER'), getDeliveryBoysOfMessForOwner)
 
 export default router
