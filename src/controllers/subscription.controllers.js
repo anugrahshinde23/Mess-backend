@@ -1,4 +1,4 @@
-import { createSubscription, getPendingSubscriptions, approvedByOwner, getUserSubscription, rejectedByOwner, getSubscriptionByStatus } from '../services/subscription.services.js'
+import { createSubscription, getPendingSubscriptions, approvedByOwner, getUserSubscription, rejectedByOwner, getSubscriptionByStatus, getTotalSubscription } from '../services/subscription.services.js'
 
 export const createUserSubscription = async(req,res) => {
     try {
@@ -119,6 +119,26 @@ export const getSubscriptionForOwnerByStatus = async (req,res) => {
         return res.status(400).json({
         success : false,
         message : error.message
+        })
+    }
+}
+
+export const getTotalSubscriptionForOwner = async (req,res) => {
+    try {
+        const ownerId = req.user.id
+
+        const data = await getTotalSubscription(ownerId)
+
+        return res.status(200).json({
+            success : true,
+            message : "Successfully fetched subscriptions",
+            subData : data
+        })
+    } catch (error) {
+        console.log(error);
+        return res.status(400).json({
+            success : false,
+            message : error.message
         })
     }
 }

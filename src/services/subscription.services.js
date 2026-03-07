@@ -225,4 +225,23 @@ export const getSubscriptionByStatus = async (ownerId, status) => {
   return subs;
 };
 
+export const getTotalSubscription = async (ownerId) => {
+
+  await expireSubscriptionsIfNeeded();
+
+  const mess = await Mess.findOne({
+    owner : ownerId
+  })
+
+  if(!mess){
+    throw new Error("Mess not found")
+  }
+
+  const subs = await Subscription.find({
+    mess : mess._id
+  })
+
+  return subs
+}
+
 
