@@ -321,18 +321,17 @@ export const rejectOrderRequest = async (data) => {
 
 export const getDeliveryBoysOfMess = async (ownerId) => {
 
-
-    const mess = await Mess.findOne({
-        owner : ownerId
-    })
-
-    if(!mess){
-        throw new Error("Mess not found")
+    const mess = await Mess.findOne({ owner: ownerId });
+  
+    if (!mess) {
+      throw new Error("Mess not found");
     }
-
-    const dBoys = await DeliveryBoy.find(db => db.workingMesses.some(m => m.equals(mess._id)))
-
-    return dBoys
-}
+  
+    const dBoys = await DeliveryBoy.find({
+      workingMesses: mess._id
+    }).populate("user");
+  
+    return dBoys;
+  };
 
 
