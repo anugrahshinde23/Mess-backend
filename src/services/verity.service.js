@@ -105,7 +105,7 @@ export const sendMessage = async (verityData) => {
    try {
        const { vectorStore, client } = await getVectorStore();
        connection = client;
-       const results = await vectorStore.similaritySearch(message, 3);
+       const results = await vectorStore.similaritySearch(message, 10);
        contextText = results.map(r => r.pageContent).join("\n\n");
    } catch (err) {
        console.error("RAG Search Error:", err);
