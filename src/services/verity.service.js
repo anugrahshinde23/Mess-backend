@@ -1,75 +1,15 @@
 import Groq from "groq-sdk";
 import VerityChat from "../models/verity/verity.model.js";
-import Order from "../models/order.model.js";
-import Wallet from "../models/wallet.model.js";
-import Subscription from "../models/subscription.model.js";
-import Menu from "../models/menu.model.js";
-import Plan from "../models/plan.model.js";
-import User from "../models/user.model.js";
-import Payment from "../models/payment.model.js";
+import { getVectorStore } from "../../rag/retriever.js";
 
-const fetchContextData = async (intent, userId) => {
-  let context = "";
 
-  if (intent === "ORDER") {
-    const orders = await Order.find({ user: userId })
-      .sort({ createdAt: -1 })
-      .limit(3);
-
-    context += `User Orders:\n${JSON.stringify(orders, null, 2)}\n`;
-  }
-
-  if (intent === "WALLET") {
-    const wallet = await Wallet.findOne({ user: userId });
-
-    context += `Wallet Info:\n${JSON.stringify(wallet, null, 2)}\n`;
-  }
-
-  if (intent === "SUBSCRIPTION") {
-    const subscription = await Subscription.findOne({ user: userId });
-
-    context += `Subscription Info:\n${JSON.stringify(subscription, null, 2)}\n`;
-  }
-
-  if (intent === "MENU") {
-    const menu = await Menu.find();
-
-    context += `Menu:\n${JSON.stringify(menu, null, 2)}\n`;
-  }
-
-  if (intent === "PLAN") {
-    const plans = await Plan.find();
-
-    context += `Plans:\n${JSON.stringify(plans, null, 2)}\n`;
-  }
-
-  if (intent === "PAYMENT") {
-    const payment = await Payment.find();
-
-    context += `Payment:\n${JSON.stringify(payment, null, 2)}\n`;
-  }
-
-  return context;
-};
-
-const detectIntent = (message) => {
-  const msg = message.toLowerCase();
-
-  if (msg.includes("order")) return "ORDER";
-  if (msg.includes("subscription")) return "SUBSCRIPTION";
-  if (msg.includes("menu")) return "MENU";
-  if (msg.includes("plan")) return "PLAN";
-  if (msg.includes("payment")) return "PAYMENT";
-
-  return "GENERAL";
-};
 
 const groq_api_key = process.env.GROQ_API;
 const groq = new Groq({ apiKey: groq_api_key });
 
 export const askVerity = async (verityData) => {
   // 1. Get history from the request body
-  const { history, user, contextData } = verityData;
+  const { history, context } = verityData;
 
   let systemPrompt = `You are Verity AI, created by Anugrah.
               You are a smart conversational assistant.
@@ -87,14 +27,17 @@ export const askVerity = async (verityData) => {
 - If no data found, clearly say so.
 - Keep replies short and conversational.
 
+CONTEXT FROM DATABASE:
+              ${context || "No specific mess data found for this query."}
 
-User Details:
-${user ? JSON.stringify(user, null, 2) : ""}
+              RULES:
+              - Answer questions about Messes, Menus, and Plans using the CONTEXT above.
+              - If the information is not in the context, politely say you don't know.
+              - Keep it short, clear, and conversational.
 
 
 
-Database Context:
-${contextData || ""}
+
               `;
 
   try {
@@ -140,6 +83,21 @@ export const sendMessage = async (verityData) => {
     throw new Error("Chat not found");
   }
 
+   // 1. RAG: Search Vector DB for relevant context
+   let contextText = "";
+   let connection;
+   try {
+       const { vectorStore, client } = await getVectorStore();
+       connection = client;
+       const results = await vectorStore.similaritySearch(message, 3);
+       contextText = results.map(r => r.pageContent).join("\n\n");
+   } catch (err) {
+       console.error("RAG Search Error:", err);
+   } finally {
+       if (connection) await connection.close(); // Important for Render RAM!
+   }
+ 
+
   const userId = chat.user;
 
   // Save user message
@@ -148,15 +106,7 @@ export const sendMessage = async (verityData) => {
     text: message,
   });
 
-  const intent = detectIntent(message);
 
-  const contextData = await fetchContextData(intent, userId);
-
-  const user = await User.findById(userId);
-
-  if (!user) {
-    throw new Error("User not found");
-  }
 
   const history = chat.messages.map((m) => ({
     role: m.role,
@@ -165,8 +115,7 @@ export const sendMessage = async (verityData) => {
 
   const response = await askVerity({
     history,
-    user,
-    contextData,
+    context : contextText
   });
 
   const aiReply = response.choices[0].message.content;
