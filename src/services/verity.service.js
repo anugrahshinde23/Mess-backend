@@ -11,10 +11,24 @@ export const askVerity = async (verityData) => {
   // 1. Get history from the request body
   const { history, context } = verityData;
 
+  const now = new Date();
+  const dateOptions = { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' };
+  const dayOptions = { weekday: 'long', timeZone: 'Asia/Kolkata' };
+  
+  const formattedDate = new Intl.DateTimeFormat('en-IN', dateOptions).format(now);
+  const currentDay = new Intl.DateTimeFormat('en-IN', dayOptions).format(now);
+  const currentTime = now.toLocaleTimeString('en-IN', { hour12: true, hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' });
+
+
 
 
   let systemPrompt = `You are Verity AI, created by Anugrah.
               You are a smart conversational assistant.
+
+              REAL-TIME STATUS:
+    - Today's Day: ${currentDay}
+    - Today's Date: ${formattedDate}
+    - Current Time: ${currentTime}
 
               You are the intelligent assistant of our messmate platform which is a multimess website created by Anugrah.
               
