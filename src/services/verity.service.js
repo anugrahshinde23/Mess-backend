@@ -1,6 +1,13 @@
 import Groq from "groq-sdk";
 import VerityChat from "../models/verity/verity.model.js";
 import { getVectorStore } from "../../rag/retriever.js";
+import User from "../models/user.model.js";
+import Subscription from "../models/subscription.model.js";
+import Order from "../models/order.model.js";
+import Mess from "../models/mess.model.js";
+import DeliveryBoy from "../models/deliveryBoy.model.js";
+import Menu from "../models/menu.model.js";
+import DeliveryBoyRequest from "../models/deliveryBoyRequest.model.js";
 
 
 
@@ -9,7 +16,7 @@ const groq = new Groq({ apiKey: groq_api_key });
 
 export const askVerity = async (verityData) => {
   // 1. Get history from the request body
-  const { history, context } = verityData;
+  const { history, context, privateContext } = verityData;
 
   const now = new Date();
   const dateOptions = { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' };
@@ -24,6 +31,10 @@ export const askVerity = async (verityData) => {
 
   let systemPrompt = `You are Verity AI, created by Anugrah.
               You are a smart conversational assistant.
+
+
+              PRIVATE CONTEXT:
+    ${privateContext}
 
               REAL-TIME STATUS:
     - Today's Day: ${currentDay}
@@ -99,7 +110,7 @@ export const sendMessage = async (verityData) => {
     throw new Error("Chat not found");
   }
 
-   // 1. RAG: Search Vector DB for relevant context
+  
    let contextText = "";
    let connection;
    try {
@@ -114,7 +125,48 @@ export const sendMessage = async (verityData) => {
    }
  
 
-  const userId = chat.user;
+
+  const user = await User.findById(chat.user);
+  if(!user){
+    throw new Error("User not found")
+  }
+  let privateContext = `User: ${user.name}, Role: ${user.role}\n`;
+
+ 
+  if (user.role === 'CUSTOMER') {
+    const sub = await Subscription.findOne({ user: user._id, status: 'ACTIVE' }).populate('plan mess approvedBy');
+    const orders = await Order.find({ user: user._id }).sort({ createdAt: -1 }).limit(3).populate('mess payment');
+    
+    privateContext += `
+    - Subscription: ${sub ? `${sub.plan.type} at ${sub.mess.name} (Approved by: ${sub.approvedBy?.name})` : "No active subscription"}
+    - Recent Orders: ${orders.map(o => `${o.mess.name}: Status ${o.status}, Payment: ${o.payment?.status}`).join(" | ") || "No orders"}
+    `;
+  }
+
+  if (user.role === 'MESS_OWNER') {
+    const mess = await Mess.findOne({ owner: user._id }).populate('plan.plan deliveryPartners');
+    if (mess) {
+      const activeSubs = await Subscription.find({ mess: mess._id, status: 'ACTIVE' }).populate('user');
+      const pendingOrders = await Order.countDocuments({ mess: mess._id, status: 'PENDING' });
+      
+      privateContext += `
+      - Your Mess: ${mess.name}, Address: ${mess.address}
+      - Delivery Partners: ${mess.deliveryPartners.map(d => d.name).join(", ") || "None"}
+      - Current Business: ${activeSubs.length} active subscribers.
+      - Pending Tasks: You have ${pendingOrders} orders waiting for your approval.
+      `;
+    }
+  }
+
+
+  if (user.role === 'DELIVERY_BOY') {
+    const dboy = await DeliveryBoy.findOne({ user: user._id }).populate('activeOrder subscriptionOrders');
+    privateContext += `
+    - Service Areas: ${dboy?.servicePinCodes?.join(", ") || "Not specified"}
+    - Active Task: ${dboy?.activeOrder ? `Delivering Order ID: ${dboy.activeOrder._id}` : "No current active order."}
+    - Subscription Deliveries: ${dboy?.subscriptionOrders?.length || 0} tasks assigned.
+    `;
+  }
 
   // Save user message
   chat.messages.push({
@@ -131,7 +183,8 @@ export const sendMessage = async (verityData) => {
 
   const response = await askVerity({
     history,
-    context : contextText
+    context : contextText,
+    privateContext
   });
 
   const aiReply = response.choices[0].message.content;
