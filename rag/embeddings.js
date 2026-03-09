@@ -24,6 +24,10 @@ export const createEmbeddingsAndSendToDB = async (chunks) => {
                 console.log(`ℹ️ Vector Store already has ${count} docs. Skipping initial sync to avoid duplicates.`);
                 return;
             }
+        }else if (chunks.length === 1) {
+            const docId = chunks[0].metadata.id; // Get ID from the chunk
+            await collection.deleteMany({ "metadata.id": docId });
+            console.log(`🧹 Cleaned old version for ID: ${docId}`);
         }
 
         console.log(`📤 Sending ${chunks.length} chunk(s) to Hugging Face...`);
