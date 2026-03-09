@@ -17,9 +17,17 @@ export const createEmbeddingsAndSendToDB = async (chunks) => {
         await client.connect();
         const collection = client.db("multi_mess_db").collection("vector_search");
     
+        // 🔥 SMART CHECK: If syncing ALL docs (Initial Sync), check if DB is already full
+        if (chunks.length > 1) {
+            const count = await collection.countDocuments();
+            if (count > 0) {
+                console.log(`ℹ️ Vector Store already has ${count} docs. Skipping initial sync to avoid duplicates.`);
+                return;
+            }
+        }
+
         console.log(`📤 Sending ${chunks.length} chunk(s) to Hugging Face...`);
     
-        // 1. Initialize the vector store connection
         const vectorStore = new MongoDBAtlasVectorSearch(embeddings, {
             collection,
             indexName: "vector_index",
@@ -27,9 +35,7 @@ export const createEmbeddingsAndSendToDB = async (chunks) => {
             embeddingKey: "embedding",
         });
 
-        // 2. Use addDocuments instead of fromDocuments for live updates
         await vectorStore.addDocuments(chunks);
-    
         console.log("✅ Success! Vector Store updated.");
       } catch (err) {
         console.error("❌ Error saving to vector store:", err);
@@ -37,6 +43,7 @@ export const createEmbeddingsAndSendToDB = async (chunks) => {
         await client.close();
       }
 };
+
 
 // Add this new export to your embeddings.js
 export const deleteFromVectorDB = async (docId) => {
