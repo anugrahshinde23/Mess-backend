@@ -33,7 +33,7 @@ export const createEmbeddingsAndSendToDB = async (chunks) => {
             
             if (docId) {
                 // Pehle purana record delete karo
-                const delResult = await collection.deleteMany({ "metadata.id": docId });
+                const delResult = await collection.deleteMany({ "id": docId });
                 console.log(`🧹 Deleted ${delResult.deletedCount} old doc(s) for ID: ${docId}`);
             }
         }
