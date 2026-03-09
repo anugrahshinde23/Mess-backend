@@ -45,7 +45,9 @@ export const createDocuments = async () => {
         const messName = menu.mess?.name || "Unknown Mess";
         const messAddress = menu.mess?.address || "";
     
-        // Helper to format each meal from your mealSchema
+        const createdDate = new Date(menu.createdAt).toLocaleDateString('en-IN');
+        const updatedDate = new Date(menu.updatedAt).toLocaleDateString('en-IN');
+
         const formatMeal = (meal, type) => {
           if (!meal || !meal.items || meal.items.length === 0) return "";
           return `${type}: ${meal.items.join(", ")} (Time: ${meal.startTime} - ${meal.endTime})`;
@@ -59,7 +61,10 @@ export const createDocuments = async () => {
     ${formatMeal(menu.breakfast, "Breakfast")}
     ${formatMeal(menu.lunch, "Lunch")}
     ${formatMeal(menu.dinner, "Dinner")}
-    `.trim();
+    [Data Freshness Info]
+This menu was last updated on: ${updatedDate}
+Original record created on: ${createdDate}
+`.trim();
     
         docs.push(new Document({
           pageContent: text,

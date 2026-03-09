@@ -67,6 +67,8 @@ menuSchema.post('save', async function(doc) {
         await doc.populate("mess");
         const messName = doc.mess?.name || "Unknown Mess";
         const messAddress = doc.mess?.address || "";
+
+                const updatedTime = new Date(doc.updatedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     
         const formatMeal = (meal, type) => {
           if (!meal || !meal.items || meal.items.length === 0) return "";
@@ -81,7 +83,9 @@ menuSchema.post('save', async function(doc) {
     ${formatMeal(doc.breakfast, "Breakfast")}
     ${formatMeal(doc.lunch, "Lunch")}
     ${formatMeal(doc.dinner, "Dinner")}
-    `.trim();
+    [System Info]
+Last Updated: ${updatedTime}
+        `.trim();
 
         const langchainDoc = new Document({
           pageContent: text,
