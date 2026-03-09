@@ -55,7 +55,7 @@ import { createEmbeddingsAndSendToDB } from '../../rag/embeddings.js';
 import { deleteFromVectorDB } from '../../rag/embeddings.js';
 
 // This hook triggers when you use Mess.findByIdAndDelete()
-messSchema.post('findOneAndDelete', async function(doc) {
+menuSchema.post('findOneAndDelete', async function(doc) {
     if (doc) {
         await deleteFromVectorDB(doc._id.toString());
     }
