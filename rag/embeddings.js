@@ -17,21 +17,27 @@ export const createEmbeddingsAndSendToDB = async (chunks) => {
         await client.connect();
         const collection = client.db("multi_mess_db").collection("vector_search");
     
-        // 🔥 SMART CHECK: If syncing ALL docs (Initial Sync), check if DB is already full
+        // 1. Initial Sync (Full List)
         if (chunks.length > 1) {
             const count = await collection.countDocuments();
             if (count > 0) {
-                console.log(`ℹ️ Vector Store already has ${count} docs. Skipping initial sync to avoid duplicates.`);
+                console.log(`ℹ️ Skipping full sync. Count: ${count}`);
                 return;
             }
-        }else if (chunks.length === 1) {
-            const docId = chunks[0].metadata.id; // Get ID from the chunk
-            await collection.deleteMany({ "metadata.id": docId });
-            console.log(`🧹 Cleaned old version for ID: ${docId}`);
+        } 
+        
+        // 2. Live Update (Single Chunk)
+        else if (chunks.length === 1) {
+            // Hum extract kar rahe hain ID ko metadata se
+            const docId = chunks[0].metadata.id; 
+            
+            if (docId) {
+                // Pehle purana record delete karo
+                const delResult = await collection.deleteMany({ "metadata.id": docId });
+                console.log(`🧹 Deleted ${delResult.deletedCount} old doc(s) for ID: ${docId}`);
+            }
         }
 
-        console.log(`📤 Sending ${chunks.length} chunk(s) to Hugging Face...`);
-    
         const vectorStore = new MongoDBAtlasVectorSearch(embeddings, {
             collection,
             indexName: "vector_index",
@@ -39,14 +45,17 @@ export const createEmbeddingsAndSendToDB = async (chunks) => {
             embeddingKey: "embedding",
         });
 
+        // 3. Naya version add karo
         await vectorStore.addDocuments(chunks);
         console.log("✅ Success! Vector Store updated.");
+
       } catch (err) {
-        console.error("❌ Error saving to vector store:", err);
+        console.error("❌ Error:", err);
       } finally {
         await client.close();
       }
 };
+
 
 
 // Add this new export to your embeddings.js
