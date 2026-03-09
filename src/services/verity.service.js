@@ -11,7 +11,7 @@ export const askVerity = async (verityData) => {
   // 1. Get history from the request body
   const { history, context } = verityData;
 
-  console.log(context)
+
 
   let systemPrompt = `You are Verity AI, created by Anugrah.
               You are a smart conversational assistant.
