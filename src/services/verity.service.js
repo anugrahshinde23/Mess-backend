@@ -147,13 +147,14 @@ export const sendMessage = async (verityData) => {
     const mess = await Mess.findOne({ owner: user._id }).populate('plan.plan deliveryPartners');
     if (mess) {
       const activeSubs = await Subscription.find({ mess: mess._id, status: 'ACTIVE' }).populate('user');
-      const pendingOrders = await Order.countDocuments({ mess: mess._id, status: 'PENDING' });
-      
+      const pendingOrders = await Order.find({ mess: mess._id, status: 'PENDING' });
+      const dboys = await DeliveryBoy.find({ workingMesses: mess._id }).populate('user');
+    
       privateContext += `
       - Your Mess: ${mess.name}, Address: ${mess.address}
-      - Delivery Partners: ${mess.deliveryPartners.map(d => d.name).join(", ") || "None"}
+      - Delivery Partners: ${dboys.map(d => `name: ${d.user.name}, phone: (${d.user.phone})`).join(', ') || 'None assigned'}
       - Current Business: ${activeSubs.length} active subscribers.
-      - Pending Tasks: You have ${pendingOrders} orders waiting for your approval.
+      - Pending Tasks: You have ${pendingOrders.length} orders waiting for your approval.
       `;
     }
   }
