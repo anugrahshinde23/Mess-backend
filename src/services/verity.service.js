@@ -147,7 +147,7 @@ export const sendMessage = async (verityData) => {
     const mess = await Mess.findOne({ owner: user._id }).populate('plan.plan deliveryPartners');
     if (mess) {
       const activeSubs = await Subscription.find({ mess: mess._id, status: 'ACTIVE' }).populate('user');
-      const pendingOrders = await Order.find({ mess: mess._id, status: 'PENDING' });
+      const pendingOrders = await Order.find({ mess: mess._id, status: 'PLACED' });
       const dboys = await DeliveryBoy.find({ workingMesses: mess._id }).populate('user');
     
       privateContext += `
