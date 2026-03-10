@@ -154,7 +154,7 @@ export const sendMessage = async (verityData) => {
       - Your Mess: ${mess.name}, Address: ${mess.address}
       - Delivery Partners: ${dboys.map(d => `name: ${d.user.name}, phone: (${d.user.phone})`).join(', ') || 'None assigned'}
       - Current Business: ${activeSubs.length} active subscribers.
-      - Pending Tasks: You have ${pendingOrders.length} orders waiting for your approval.
+      - Pending Tasks: You have ${pendingOrders.length} orders placed.
       `;
     }
   }
