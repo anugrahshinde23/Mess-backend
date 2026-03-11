@@ -10,6 +10,7 @@ export const oneTimeOrder = async (userId, orderData) => {
   const existingOrder = await Order.findOne({
     user: userId,
     status: { $in: ["PLACED"] },
+    source : { $in: ["NORMAL"] }
   });
 
   if (existingOrder) {
@@ -174,7 +175,7 @@ export const assignOrderToDeliveryBoy = async (data) => {
 
   const userId = dBoy.user;
 
-  const expiresAt = new Date(Date.now() + 30 * 1000);
+  const expiresAt = new Date(Date.now() + 45 * 1000);
 
   const request = await OrderRequest.create({
     dBoy: dBoyId,
