@@ -71,6 +71,9 @@ app.use('/api/v1/wallet', walletRoutes)
 import verityRoutes from './routes/verity.routes.js'
 app.use('/api/v1/verity', verityRoutes)
 
+import imageRoutes from './routes/image.routes.js'
+app.use('/api/v1/image', imageRoutes)
+
 
 
 
