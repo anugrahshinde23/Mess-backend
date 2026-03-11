@@ -11,7 +11,8 @@ app.set("trust proxy",1)
 app.use(cors({
     origin: [
         "http://localhost:5173",
-        "https://mess-frontend-seven.vercel.app"
+        "https://mess-frontend-seven.vercel.app",
+        "https://messmate-in.vercel.app"
     ],
     credentials: true
 }))
