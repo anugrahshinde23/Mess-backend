@@ -1,4 +1,4 @@
-import { createPayment, getPaymentHistoryUser } from "../services/payment.services.js"
+import { createPayment, fetchPendingPayments, getPaymentHistoryUser, verifyPaymentByAdmin } from "../services/payment.services.js"
 
 export const createPaymentFromUser = async (req,res) => {
     try {
@@ -38,4 +38,44 @@ export const getPaymentHistoryForUser = async (req, res) => {
         })
     }
 }
+
+export const verifyPaymentByAdminForUser = async (req,res) => {
+    try {
+        const { paymentId } = req.params
+        const data = await verifyPaymentByAdmin(paymentId)
+
+        return res.status(200).json({
+            success : true,
+            message : "Payment Verified successfully",
+            paymentData : data
+        })
+    } catch (error) {
+        console.log(error);
+        return res.status(400).json({
+            success : false,
+            message : error.message
+        })
+    }
+}
+
+
+export const fetchPendingPaymentsForAdmin = async (req,res) => {
+    try {
+        const data = await fetchPendingPayments()
+        
+        return res.status(200).json({
+            success : true,
+            message : "Successfully fetched payments",
+            paymentData : data
+        })
+    } catch (error) {
+        console.log(error);
+        return res.status(400).json({
+            success : false,
+            message : error.message
+        })
+    }
+}
+
+
 

@@ -65,4 +65,33 @@ export const getPaymentHistoryUser = async (userId) => {
 }
 
 
+export const verifyPaymentByAdmin = async (paymentId) => {
+    const payment = await Payment.findById(paymentId)
+
+    if (!payment) {
+        throw new Error("Payment not found")
+    }
+
+    payment.status = "PAID"
+    await payment.save()
+
+    await Notification.create({
+        user: payment.user,
+        title : "Payment verified",
+        message : "Your payment is verified successfully"
+    })
+
+    return payment
+}
+
+
+export const fetchPendingPayments = async () => {
+    const payments = await Payment.find({
+        status : "PENDING"
+    }).sort({createdAt : -1})
+    .populate("user", "name")
+
+    return payments
+}
+
 
