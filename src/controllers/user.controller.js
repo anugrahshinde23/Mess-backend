@@ -1,4 +1,5 @@
 import User from '../models/user.model.js'
+import { getAllUsers } from '../services/user.services.js'
 
 export const getUser = async(req,res) => {
     try {
@@ -92,6 +93,23 @@ export const deleteUser = async(req,res) => {
         return res.status(400).json({
             success : "false",
             message : "ERROR while deleting the User"
+        })
+    }
+}
+
+export const getAllUsersForAdmin = async (req,res) => {
+    try {
+        const data = await getAllUsers()
+        return res.status(200).json({
+            success : true,
+            message : "Successfully fetched Users",
+            userData : data
+        })
+    } catch (error) {
+        console.log(error);
+        return res.status(400).json({
+            success : false,
+            message : error.message
         })
     }
 }
