@@ -28,6 +28,16 @@ const paymentSchema = new mongoose.Schema({
         enum : ["PAID","FAILED", "PENDING"],
         default : "PENDING"
     },
+    paymentMethod : {
+        type : String,
+        default : "UPI_INTENT"
+    },
+
+    utrNumber : {
+        type : String,
+        required : true,
+        unique : true
+    },
 
 
 

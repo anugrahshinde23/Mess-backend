@@ -3,12 +3,21 @@ import Order from "../models/order.model.js"
 import Payment from "../models/payment.model.js"
 
 export const createPayment = async(userId, paymentData) => {
-    const {messId,orderId, amount} = paymentData
+    const {messId,orderId, amount, utrNumber} = paymentData
+
+    if(!messId || !orderId || !amount || !utrNumber){
+        throw new Error("All fields including UTR number is required")
+    }
+
+    const utrExists = await Payment.findOne({ utrNumber });
+    if (utrExists) {
+        throw new Error("This Transaction ID/UTR has already been submitted.");
+    }
 
     const paymentExist = await Payment.findOne({
         order : orderId,
         user : userId,
-        messId : messId,
+        mess : messId,
         status : "PAID"
     })
 
@@ -16,16 +25,15 @@ export const createPayment = async(userId, paymentData) => {
         throw new Error("Payment is already done successfully")
     }
 
-    if(!messId ||!orderId || !amount){
-        throw new Error("Required fields")
-    }
+    
 
     const payment = await Payment.create({
         user : userId,
         order : orderId,
         mess : messId,
         amount,
-        status : "PAID"
+        utrNumber,
+        status : "PENDING"
     })
 
     const order = await Order.findById(orderId)
@@ -38,10 +46,10 @@ export const createPayment = async(userId, paymentData) => {
     await order.save()
 
     await Notification.create({
-        user : userId,
-        title : "Payment",
-        message : "Payment Successfull"
-    })
+        user: userId,
+        title: "Payment Submitted",
+        message: "Your payment is under verification. It will be updated soon."
+    });
 
     return payment
 }
@@ -55,4 +63,6 @@ export const getPaymentHistoryUser = async (userId) => {
 
     return payments
 }
+
+
 
