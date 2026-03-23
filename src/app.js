@@ -74,9 +74,8 @@ app.use('/api/v1/verity', verityRoutes)
 import imageRoutes from './routes/image.routes.js'
 app.use('/api/v1/image', imageRoutes)
 
-
-
-
+import feedbackRoutes from './routes/feedback.routes.js'
+app.use('/api/v1/feedback', feedbackRoutes)
 
 
 export {app}

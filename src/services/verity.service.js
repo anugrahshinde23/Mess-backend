@@ -125,7 +125,7 @@ export const sendMessage = async (verityData) => {
     
     privateContext += `
     - Subscription: ${sub ? `${sub.plan.type} at ${sub.mess.name} (Approved by: ${sub.approvedBy?.name})` : "No active subscription"}
-    - Recent Orders: ${orders.map(o => `${o.mess.name}: Status ${o.status}, Payment: ${o.payment?.status}`).join(" | ") || "No orders"}
+    - Recent Orders: ${orders.map(o => `${o.mess.name}: Status ${o.status}, Payment: ${o.payment?.status}, Source of order: ${o.source} if it is subscription then only tell about payment else dont say anything, `).join(" | ") || "No orders"}
     `;
   }
 
