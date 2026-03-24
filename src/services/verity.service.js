@@ -122,12 +122,38 @@ export const sendMessage = async (verityData) => {
   if (user.role === 'CUSTOMER') {
     const sub = await Subscription.findOne({ user: user._id, status: 'ACTIVE' }).populate('plan mess approvedBy');
     const orders = await Order.find({ user: user._id }).sort({ createdAt: -1 }).limit(3).populate('mess payment');
+    const formatMongoDate = (dateString) => {
+      const date = new Date(dateString);
     
+      // 1. Day (e.g., Monday)
+      const day = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(date);
+    
+      // 2. Date (e.g., March 23, 2026)
+      const formattedDate = new Intl.DateTimeFormat('en-US', { 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+      }).format(date);
+    
+      // 3. Time (e.g., 10:45 AM)
+      const formattedTime = new Intl.DateTimeFormat('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: true 
+      }).format(date);
+    
+      return { day, formattedDate, formattedTime };
+    };
     privateContext += `
     - Subscription: ${sub ? `${sub.plan.type} at ${sub.mess.name} (Approved by: ${sub.approvedBy?.name})` : "No active subscription"}
-    - Recent Orders: ${orders.map(o => `${o.mess.name}: Status ${o.status}, Payment: ${o.payment?.status}, Source of order: ${o.source} if it is subscription then only tell about payment else dont say anything, `).join(" | ") || "No orders"}
-    `;
-  }
+    - Recent Orders: ${orders.map(o =>   
+    {
+      const { day, formattedDate, formattedTime } = formatMongoDate(o.createdAt);
+      return `${o.mess.name}: Status ${o.status}, ${o.source === 'SUBSCRIPTION' ? `Payment: ${o.payment?.status}, ` : ""}Source: ${o.source}, Placed on: ${day}, ${formattedDate} at ${formattedTime}`;
+    }).join(" | ") || "No orders"}
+  `;
+    }
+  
 
   if (user.role === 'MESS_OWNER') {
     const mess = await Mess.findOne({ owner: user._id }).populate('plan.plan deliveryPartners');

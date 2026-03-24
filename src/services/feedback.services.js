@@ -1,6 +1,6 @@
 import Feedback from "../models/feedback.model.js"
 
-export const createFeedback = async (feedbackData) => {
+export const createFeedback = async (feedbackData, userId) => {
     const {name, email, phone, message} = feedbackData
 
     if(!name || !email || !phone || !message) {
@@ -8,6 +8,7 @@ export const createFeedback = async (feedbackData) => {
     }
 
     const feedback = await Feedback.create({
+        user : userId,
         name,
         email,
         phone,
@@ -15,4 +16,11 @@ export const createFeedback = async (feedbackData) => {
     })
 
     return feedback
+}
+
+
+export const getAllFeedback = async () => {
+    const feedBacks = await Feedback.find()
+
+    return feedBacks
 }
