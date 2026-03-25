@@ -4,10 +4,11 @@ import mongoose from "mongoose";
 const walletSchema = new mongoose.Schema({
     user : {
         type : mongoose.Schema.Types.ObjectId,
-        ref : "User"
+        ref : "User",
+        unique : true
     },
 
-    amount : {
+    balance : {
         type : Number,
         default : 0
     },
@@ -15,7 +16,12 @@ const walletSchema = new mongoose.Schema({
     isActive : {
         type : Boolean,
         default : true
-    }
+    },
+    walletDetails: {
+        upiId: String,
+        bankAccount: String,
+        ifsc: String
+      }
 }, {
     timestamps : true
 })

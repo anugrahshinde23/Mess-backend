@@ -39,6 +39,12 @@ const paymentSchema = new mongoose.Schema({
         unique : true
     },
 
+    split: {
+        ownerShare: Number,    // e.g., 80
+        deliveryShare: Number, // e.g., 30
+        adminShare: Number     // e.g., 10 (Your profit)
+      },
+
 
 
 },{

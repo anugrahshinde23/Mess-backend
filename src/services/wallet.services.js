@@ -1,81 +1,54 @@
 import Wallet from "../models/wallet.model.js"
 import User from "../models/user.model.js"
 
-export const createWallet = async (userId) => {
+export const createWallet = async (userId, walletDetails) => {
+    const { upiId, bankAccount, ifsc } = walletDetails;
 
-  const userExist = await User.findById(userId)
+    if (!upiId || !bankAccount || !ifsc) {
+        throw new Error("Required Bank Details");
+    }
 
-  if(!userExist){
-    throw new Error("User not found")
-  }
+    const user = await User.findById(userId);
+    if (!user) {
+        throw new Error("User not found");
+    }
 
-  const wallet = await Wallet.create({
-    user : userId,
-  })
+   
+    const existingWallet = await Wallet.findOne({ user: userId });
+    if (existingWallet) {
+        throw new Error("Wallet already exists for this user");
+    }
 
-  return wallet
-}
+    const wallet = await Wallet.create({
+        user: userId,
+        walletDetails: {
+            upiId,
+            bankAccount,
+            ifsc
+        }
+    });
 
-export const getWallet = async (userId) =>{
-    const userExist = await User.findById(userId)
+    return wallet; 
+};
 
-    if(!userExist){
+
+export const getUserWallet = async (userId) => {
+    const user = await User.findById(userId)
+
+    if(!user){
         throw new Error("User not found")
     }
 
-    const wallet = await Wallet.findOne({
+    const userWallet = await Wallet.findOne({
         user : userId,
         isActive : true
     })
 
-    if(!wallet){
-        throw new Error("Wallet not found")
+
+    if(!userWallet){
+        throw new Error("Wallet not exist for this user")
     }
 
-    return wallet
+    return userWallet
 }
 
-
-export const increaseWalletAmount = async (userId) => {
-    const userExist = await User.findById(userId)
-
-    if(!userExist){
-        throw new Error("User not found")
-    }
-
-    const wallet = await Wallet.findOne({
-        user : userId
-    })
-
-    if(!wallet){
-        throw new Error("Wallet not found")
-
-
-    }
-
-    wallet.amount = wallet.amount + 1000
-
-    await wallet.save()
-}
-
-export const deleteWallet = async (userId) => {
-
- const userExist = await User.findById(userId)
-
- if(!userExist){
-    throw new Error("User not fount")
- }
-
- const wallet = await Wallet.findOne({
-    user : userId
- })
-
- if(!wallet){
-    throw new Error("Wallet not found")
- }
-
- wallet.isActive = false
- await wallet.save()
-
-
-}
