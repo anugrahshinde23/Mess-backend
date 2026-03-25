@@ -15,7 +15,8 @@ const orderSchema = new mongoose.Schema({
 
     payment : {
         type : mongoose.Schema.Types.ObjectId,
-        ref : "Payment"
+        ref : "Payment",
+        default : null
     },
 
     mealType : {
