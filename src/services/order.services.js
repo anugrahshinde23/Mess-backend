@@ -19,7 +19,7 @@ export const oneTimeOrder = async (userId, orderData) => {
     );
   }
 
-  const { messId, mealType } = orderData;
+  const { messId, mealType, price } = orderData;
 
   if (!messId || !mealType) {
     throw new Error("Required fields");
@@ -82,6 +82,7 @@ export const oneTimeOrder = async (userId, orderData) => {
     user: userId,
     mealType,
     items: meal.items,
+    price,
     orderCompleteCode : code,
     orderShippingType : mess.deliveryPartners.length === 0 ? "SELF_PICK" : "NOT_DECIDED"
   });

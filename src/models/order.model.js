@@ -30,6 +30,12 @@ const orderSchema = new mongoose.Schema({
         required : true
     },
 
+    price : {
+        type : Number,
+        required : true,
+        
+    },
+
     orderDate : {
         type : Date,
         default : Date.now()
@@ -57,6 +63,8 @@ const orderSchema = new mongoose.Schema({
         ref : "Subscription",
         default : null
     },
+
+
 
     status : {
         type : String,
