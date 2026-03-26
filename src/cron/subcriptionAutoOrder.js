@@ -111,6 +111,7 @@ cron.schedule(
               user: sub.user,
               mealType,
               items: slot.items,
+              
               orderCompleteCode: code,
               source: "SUBSCRIPTION",
               subscription: sub._id,
