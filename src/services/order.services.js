@@ -220,7 +220,8 @@ export const autoAssignSubscriptionOrder = async ({orderId, messId}) => {
   const selectedDboy = dBoys[0]
 
   await Order.findByIdAndUpdate(orderId, {
-    orderShippingType : "DELIVERY"
+    orderShippingType : "DELIVERY",
+    dBoy : selectedDboy._id
   })
 
   await DeliveryBoy.findByIdAndUpdate(selectedDboy._id, {

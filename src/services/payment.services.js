@@ -1,6 +1,7 @@
 import Notification from "../models/notification.model.js"
 import Order from "../models/order.model.js"
 import Payment from "../models/payment.model.js"
+import Wallet from "../models/wallet.model.js"
 
 export const createPayment = async(userId, paymentData) => {
     const {messId,orderId, amount, utrNumber} = paymentData

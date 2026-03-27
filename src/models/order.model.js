@@ -25,6 +25,12 @@ const orderSchema = new mongoose.Schema({
         required : true
     },
 
+    dBoy : {
+        type : mongoose.Schema.Types.ObjectId,
+        ref : "DeliveryBoy",
+        default : null
+    },
+
     items : {
         type : [String],
         required : true

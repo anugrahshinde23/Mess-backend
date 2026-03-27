@@ -275,6 +275,7 @@ export const approveOrderRequest = async (data) => {
     }
 
     order.orderShippingType = "DELIVERY"
+    order.dBoy = dBoyId
     await order.save()
 
     return orderReq
