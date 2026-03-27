@@ -122,7 +122,7 @@ export const verifyPaymentByAdmin = async (paymentId) => {
         throw new Error("Wallet not found for mess owner")
     }
 
-    messOwnerWallet.balance = messOwnerBalance.balance + payment.split.ownerShare
+    messOwnerWallet.balance = messOwnerWallet.balance + payment.split.ownerShare
 
 
     await messOwnerWallet.save()
