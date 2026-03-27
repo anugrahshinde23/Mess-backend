@@ -25,6 +25,16 @@ export const createPayment = async(userId, paymentData) => {
         throw new Error("Payment is already done successfully")
     }
 
+    const OWNER_SHARE=0.8
+    const DBOY_SHARE=0.15
+    const ADMIN_SHARE=0.05
+
+    const split = {
+        ownerShare : Math.round(amount * OWNER_SHARE),
+        deliveryShare : Math.round(amount * DBOY_SHARE),
+        adminShare : Math.round(amount * ADMIN_SHARE)
+    }
+
     
 
     const payment = await Payment.create({
@@ -33,7 +43,8 @@ export const createPayment = async(userId, paymentData) => {
         mess : messId,
         amount,
         utrNumber,
-        status : "PENDING"
+        status : "PENDING",
+        split
     })
 
     const order = await Order.findById(orderId)
