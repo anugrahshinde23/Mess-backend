@@ -6,7 +6,7 @@ const router = express.Router()
 
 router.post('/create-plan', verifyJWT, createOwnerPlan)
 router.post('/add-plan-to-mess', verifyJWT, allowedRoles('MESS_OWNER'), addPlanToOwnerMess)
-router.get('/get-all-plans', verifyJWT, allowedRoles('MESS_OWNER'), getAllOwnerPlans)
+router.get('/get-all-plans', verifyJWT, allowedRoles('MESS_OWNER','ADMIN'), getAllOwnerPlans)
 router.delete('/remove-plan-from-mess', verifyJWT, allowedRoles('MESS_OWNER'), removePlanFromOwnerMess)
 router.get('/get-all-mess-plans/:messId', verifyJWT, allowedRoles('CUSTOMER'), getAllMessOwnerPlans)
 
